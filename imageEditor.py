@@ -14,7 +14,8 @@ class Application(tk.Frame):
 	def __init__(self, image, master=None ):
 		super().__init__(master)
 		self.master = master
-		
+		self.imagePath = image
+
 		image = Image.open(img)
 	
 		self.canvas_config()
@@ -30,15 +31,16 @@ class Application(tk.Frame):
 		self.window_config()
 
 		self.keyDraw = False
+		self.canvas.keyOverlay = False
 		self.canvas.lineWidth = 1
 		self.canvas.lineColor = "#ff0000"
 		self.canvas.lastMoves = list()
 		self.canvas.undoList = []
 
 	def window_config(self):
-		self.master.geometry(f"{self.width}x{self.height+20}")
+		self.master.geometry(f"{self.width}x{self.height+22}")
 		self.master.title("imageEditor")
-		self.master.resizable(False, False)
+		#self.master.resizable(False, False)
 		#frameless window
 		#self.master.overrideredirect(True) 
 	  
@@ -91,7 +93,8 @@ class Application(tk.Frame):
 
 	def key_pressed(self, event):
 		x, y = event.x, event.y 
-		Draw(self.master, self.canvas).line( x, y)
+		#Draw(self.master, self.canvas).line( x, y)
+		Draw(self.master, self.canvas).overlay( x, y, self.imagePath)
 	
 	def key_released(self, event):
 		self.canvas.keyDraw =  False
@@ -118,14 +121,14 @@ class Application(tk.Frame):
 		self.canvas.lineWidth = self.canvas.lineWidth + 1
 		print(f"self.canvas.lineWidth {self.canvas.lineWidth}")
 		if self.canvas.lineWidth > 10:
-		 	self.canvas.lineWidth = 10
+			self.canvas.lineWidth = 10
 
 	def smaller_brush(self, event):
 
 		self.canvas.lineWidth = self.canvas.lineWidth - 1
 		print(f"self.canvas.lineWidth {self.canvas.lineWidth}")
 		if self.canvas.lineWidth <= 0:
-		 	self.canvas.lineWidth = 1
+			self.canvas.lineWidth = 1
 
 
 
@@ -135,6 +138,9 @@ class Draw():
 		self.master = master
 		self.canvas = canvas
 		self.canvas.keyDraw = False
+		self.canvas.keyOverlay = False
+		#TODO image Handler
+		self.imagePath = "gutman.jpg"
 				
 
 	def line(self, x, y):
@@ -143,11 +149,20 @@ class Draw():
 		self.canvas.keyDraw = True
 		self.master.bind('<Motion>', self.motion)
 
+	def overlay(self, x, y,imagePath):
+		self.y = y
+		self.x = x
+		self.canvas.keyOverlay = True
+		self.imagePath = imagePath
+		self.master.bind('<Motion>', self.motion)
+
 	def key_released(self):
 		self.keyDraw = False
+		self.keyOverlay = False
 		self.canvas.keyDraw = False
 		self.canvas.undoList.append(list(self.canvas.lastMoves))
 		self.canvas.lastMoves = []
+
 		
 	def undo(self):
 		try:
@@ -157,16 +172,50 @@ class Draw():
 		except:
 			pass
 
-
-
 	def motion(self, event):
-
+		
 		if self.canvas.keyDraw:
+			print("LINE")
+			print("LINE")
+			print("LINE")
+
 			x, y = event.x, event.y
 			rect = self.canvas.create_line(x, y, self.x, self.y, \
 					fill=self.canvas.lineColor, width=self.canvas.lineWidth,)
 			self.x ,self.y = x, y
 			self.canvas.lastMoves.append(rect)
+
+		elif self.canvas.keyOverlay:
+
+			self.get_pixel_val()
+			x, y = event.x, event.y
+			rect = self.canvas.create_rectangle(x, y, x+self.canvas.lineWidth, y+self.canvas.lineWidth,
+					fill=self.canvas.lineColor, outline=self.canvas.lineColor)
+			
+
+
+			self.x ,self.y = x, y
+			self.canvas.lastMoves.append(rect)
+
+	
+	def get_pixel_val(self):	
+		im = Image.open(self.imagePath).convert('RGB')
+		pixlist = list()
+		#TODO highlighter
+
+
+		r, g, b = im.getpixel((self.x, self.y))
+
+		g = g+100
+		b = b+100
+		if r > 255 : r = 255 
+		if g > 255: g = 255
+		if b > 255: b = 255 
+		a = "#{:02x}{:02x}{:02x}".format(r,g,b)
+		self.canvas.lineColor = a
+		print(a)
+
+
 	
 
 class Sidebar():
@@ -175,26 +224,28 @@ class Sidebar():
 		self.canvas = canvas
 		
 
-		sidebar = tk.Frame(self.master, width=self.master.width,bd=0, bg='blue', 
-					height=25,  borderwidth=0,highlightcolor="blue", 
+		sidebar = tk.Frame(self.master, width=self.master.width,bd=0, bg='white', 
+					height=40,  borderwidth=0, highlightcolor="blue", 
 					highlightbackground="yellow", cursor="arrow", relief="flat")
 
 		sidebar.pack(expand=True, fill='both', side='top', anchor='n', padx=0, pady=0)
 
-		self.pixelVirtual = tk.PhotoImage(width=1, height=1)
+		
+		self.icon = tk.PhotoImage(file="palette.png")
 
-		self.button1 = tk.Button(sidebar, width=1, heigh=1, bg="green",
-								image=self.pixelVirtual,highlightcolor="green", 
-								highlightbackground="green", 
-								cursor="arrow", command=self.turn_red)
+		self.button1 = tk.Button(sidebar, width=1, heigh=1, bg="white",
+								image=self.icon, highlightcolor="green",  
+								cursor="arrow", command=self.turn_red,
+								compound="center")
 		
 		self.button1.pack(side="left", anchor="nw")
-		self.button1.configure(height=10, width=30)
+
+		self.button1.configure(height=15, width=20)
 	
 	def turn_red(self):
 		print("CLICKED")
 		self.canvas.lineColor = colorchooser.askcolor(title ="Choose color",
-		color=self.canvas.lineColor)[-1:][0]
+								color=self.canvas.lineColor)[-1:][0]
 		print(self.canvas.lineColor)
 
 def show_help():
