@@ -3,6 +3,7 @@
 
 from PIL import ImageTk,Image
 import tkinter as tk 
+from tkinter import colorchooser
 import os, sys, io
 import pyautogui
 	
@@ -13,49 +14,34 @@ class Application(tk.Frame):
 	def __init__(self, image, master=None ):
 		super().__init__(master)
 		self.master = master
-		self.master.title("imageEditor")
 		
-
 		image = Image.open(img)
-		
+	
 		self.canvas_config()
+		self.master.width = self.width
+		self.master.height = self.height
 
-
-
-
-
-		sidebar = tk.Frame(root, width=self.width,bd=0, bg='blue', height=25,  borderwidth=0,
-			highlightcolor="blue", highlightbackground="yellow", cursor="arrow", relief="sunken")
-
-		sidebar.pack(expand=True, fill='both', side='top', anchor='n')
-
-		self.button1 = tk.Button(sidebar, width=1, heigh=1, bg="green",
-			highlightcolor="green", highlightbackground="green", cursor="arrow")
-		
-		self.button1.pack(side="left", anchor="nw")
-		self.button1.bind("ButtonPress-1", self.turn_red)
-
-
-		
+		sidebar = Sidebar(self.master, self.canvas)
 		self.keybinds()
 
 
-
-
-
-	def turn_red(self, event):
-		event.widget["activeforeground"] = "red"
-
 	def canvas_config(self):
 		self.convert_image(img)
-		
+		self.window_config()
+
 		self.keyDraw = False
 		self.canvas.lineWidth = 1
 		self.canvas.lineColor = "#ff0000"
-
 		self.canvas.lastMoves = list()
 		self.canvas.undoList = []
 
+	def window_config(self):
+		self.master.geometry(f"{self.width}x{self.height+20}")
+		self.master.title("imageEditor")
+		self.master.resizable(False, False)
+		#frameless window
+		#self.master.overrideredirect(True) 
+	  
 
 	def keybinds(self):
 		#when mouse button pressed		
@@ -83,19 +69,18 @@ class Application(tk.Frame):
 	
 	def convert_image(self, img):
 		self.bgImage = ImageTk.PhotoImage(Image.open(img), master=self.master)
-		self.height, self.width = self.get_sizes()
+		self.get_sizes()
 		self.set_bg_image()	
-		self.set_sizes()
-		self.pack()
+		#self.window_config()
+		self.pack(padx=0, pady=0)
 
-	  
+
+
 	def get_sizes(self):
-		height = self.bgImage.height()
-		width = self.bgImage.width()
-		return height, width
+		self.height = self.bgImage.height()
+		self.width = self.bgImage.width()
+		
 
-	def set_sizes(self):
-		self.master.geometry(f"{self.width}x{self.height+20}")
 
 	def set_bg_image(self):
 
@@ -115,7 +100,7 @@ class Application(tk.Frame):
 		
 
 	def save_img(self, event):
-		print("SAVE")
+		print("SAVED")
 		#self.canvas.pack()
 		ps = self.canvas.postscript(colormode="color", height=self.height, width=self.width) 
 		
@@ -124,8 +109,6 @@ class Application(tk.Frame):
 
 	def undo(self, event):
 		print("Undo")
-		#"insert -4 chars", "insert")
-		#Draw(self.master).clear_all()
 		Draw(self.master, self.canvas).undo()
 
 	def close(self, event):
@@ -152,50 +135,24 @@ class Draw():
 		self.master = master
 		self.canvas = canvas
 		self.canvas.keyDraw = False
-
-
-
-		#self.canvas.lastMoves
 				
+
 	def line(self, x, y):
-		
 		self.y = y
 		self.x = x
 		self.canvas.keyDraw = True
 		self.master.bind('<Motion>', self.motion)
-		
-
 
 	def key_released(self):
 		self.keyDraw = False
 		self.canvas.keyDraw = False
-		
-
-
-		print(f"self.canvas.lastMoves  {self.canvas.lastMoves}")
-		print(f"self.canvas.undoList {self.canvas.undoList}")
-		print(f"self.canvas.undoList {len(self.canvas.undoList)}")
-		
-		
 		self.canvas.undoList.append(list(self.canvas.lastMoves))
-
-
-		print(f"\nself.canvas.undoList {len(self.canvas.undoList)}")
 		self.canvas.lastMoves = []
-		print(f"self.canvas.undoList {self.canvas.undoList}")
 		
 	def undo(self):
 		try:
-			print(self.canvas.undoList[-1:])
-			for elem in self.canvas.undoList[-1:][0]:
-				print(elem)
-				self.canvas.delete(elem)
-			
-			print(" ")
-			print(" ")
-			print(" ")
-			print(self.canvas.undoList[0][-1:])
-			
+			for elem in self.canvas.undoList[-1:][0]:				
+				self.canvas.delete(elem)			
 			del self.canvas.undoList[-1:]
 		except:
 			pass
@@ -205,17 +162,40 @@ class Draw():
 	def motion(self, event):
 
 		if self.canvas.keyDraw:
-			print(f"cursor {event.x}, {event.y}")
-			print(f"olf cursor {self.x}, {self.y}\n")
 			x, y = event.x, event.y
 			rect = self.canvas.create_line(x, y, self.x, self.y, \
-					fill=self.canvas.lineColor, width=self.canvas.lineWidth,
-					tags="main_line_tag",)
+					fill=self.canvas.lineColor, width=self.canvas.lineWidth,)
 			self.x ,self.y = x, y
 			self.canvas.lastMoves.append(rect)
 	
 
+class Sidebar():
+	def __init__(self, master=None, canvas=None):
+		self.master = master
+		self.canvas = canvas
+		
 
+		sidebar = tk.Frame(self.master, width=self.master.width,bd=0, bg='blue', 
+					height=25,  borderwidth=0,highlightcolor="blue", 
+					highlightbackground="yellow", cursor="arrow", relief="flat")
+
+		sidebar.pack(expand=True, fill='both', side='top', anchor='n', padx=0, pady=0)
+
+		self.pixelVirtual = tk.PhotoImage(width=1, height=1)
+
+		self.button1 = tk.Button(sidebar, width=1, heigh=1, bg="green",
+								image=self.pixelVirtual,highlightcolor="green", 
+								highlightbackground="green", 
+								cursor="arrow", command=self.turn_red)
+		
+		self.button1.pack(side="left", anchor="nw")
+		self.button1.configure(height=10, width=30)
+	
+	def turn_red(self):
+		print("CLICKED")
+		self.canvas.lineColor = colorchooser.askcolor(title ="Choose color",
+		color=self.canvas.lineColor)[-1:][0]
+		print(self.canvas.lineColor)
 
 def show_help():
 	print("""./imageEditor.py
@@ -240,6 +220,7 @@ except:
 
 root = tk.Tk()
 
+#root.eval('tk::PlaceWindow . center')
 
 app = Application(img, master=root)
 app.imgSave = imgSave
