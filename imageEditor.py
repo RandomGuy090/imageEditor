@@ -275,7 +275,7 @@ except:
 root = tk.Tk()
 
 #root.eval('tk::PlaceWindow . center')
-
+print("xDDDD")
 app = Application(img, master=root)
 app.imgSave = imgSave
 
