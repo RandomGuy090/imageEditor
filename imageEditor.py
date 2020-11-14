@@ -93,8 +93,8 @@ class Application(tk.Frame):
 
 	def key_pressed(self, event):
 		x, y = event.x, event.y 
-		#Draw(self.master, self.canvas).line( x, y)
-		Draw(self.master, self.canvas).overlay( x, y, self.imagePath)
+		Draw(self.master, self.canvas).line( x, y)
+		#Draw(self.master, self.canvas).overlay( x, y, self.imagePath)
 	
 	def key_released(self, event):
 		self.canvas.keyDraw =  False
@@ -230,11 +230,14 @@ class Sidebar():
 
 		sidebar.pack(expand=True, fill='both', side='top', anchor='n', padx=0, pady=0)
 
-		
-		self.icon = tk.PhotoImage(file="palette.png")
+		try:
+			self.icon = tk.PhotoImage(file="palette.png")
+		except:
+			self.icon = tk.PhotoImage(width=1, height=1)
+
 
 		self.button1 = tk.Button(sidebar, width=1, heigh=1, bg="white",
-								image=self.icon, highlightcolor="green",  
+								image = self.icon, highlightcolor="green",  
 								cursor="arrow", command=self.turn_red,
 								compound="center")
 		
