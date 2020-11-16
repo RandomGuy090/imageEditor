@@ -36,6 +36,7 @@ class Application(tk.Frame):
 		self.canvas.lineColor = "#ff0000"
 		self.canvas.lastMoves = list()
 		self.canvas.undoList = []
+		#self.canvas.PencilDraw = False
 
 	def window_config(self):
 		self.master.geometry(f"{self.width}x{self.height+22}")
@@ -55,11 +56,11 @@ class Application(tk.Frame):
 		self.master.bind('<Control-z>', self.undo)
 		#when want to save CTRL+S
 		self.master.bind('<Control-s>', self.save_img)
+		self.master.bind('<Control-c>', self.save_img)
 		self.master.bind('<space>', self.save_img)
 		#when want to escape
 		self.master.bind('<Escape>', self.close)
 		self.master.bind('<Key-q>', self.close)
-		self.master.bind('<Control-c>', self.close)
 		#make brush bigger
 		self.master.bind('<Key-plus>', self.bigger_brush)
 		self.master.bind('<Key-equal>', self.bigger_brush)
@@ -94,7 +95,7 @@ class Application(tk.Frame):
 	def key_pressed(self, event):
 		x, y = event.x, event.y 
 		Draw(self.master, self.canvas).line( x, y)
-		#Draw(self.master, self.canvas).overlay( x, y, self.imagePath)
+	
 	
 	def key_released(self, event):
 		self.canvas.keyDraw =  False
@@ -122,6 +123,7 @@ class Application(tk.Frame):
 		print(f"self.canvas.lineWidth {self.canvas.lineWidth}")
 		if self.canvas.lineWidth > 10:
 			self.canvas.lineWidth = 10
+		self.canvas.lineWidthLabel.set(self.canvas.lineWidth)
 
 	def smaller_brush(self, event):
 
@@ -129,6 +131,8 @@ class Application(tk.Frame):
 		print(f"self.canvas.lineWidth {self.canvas.lineWidth}")
 		if self.canvas.lineWidth <= 0:
 			self.canvas.lineWidth = 1
+		self.canvas.lineWidthLabel.set(self.canvas.lineWidth)
+
 
 
 
@@ -137,10 +141,11 @@ class Draw():
 	def __init__(self, master=None, canvas=None):
 		self.master = master
 		self.canvas = canvas
-		self.canvas.keyDraw = False
-		self.canvas.keyOverlay = False
+
+		#self.canvas.keyDraw = False
+		
 		#TODO image Handler
-		self.imagePath = "gutman.jpg"
+		#self.imagePath = "gutman.jpg"
 				
 
 	def line(self, x, y):
@@ -149,12 +154,7 @@ class Draw():
 		self.canvas.keyDraw = True
 		self.master.bind('<Motion>', self.motion)
 
-	def overlay(self, x, y,imagePath):
-		self.y = y
-		self.x = x
-		self.canvas.keyOverlay = True
-		self.imagePath = imagePath
-		self.master.bind('<Motion>', self.motion)
+
 
 	def key_released(self):
 		self.keyDraw = False
@@ -172,48 +172,20 @@ class Draw():
 		except:
 			pass
 
-	def motion(self, event):
-		
-		if self.canvas.keyDraw:
-			print("LINE")
-			print("LINE")
-			print("LINE")
 
+
+	def motion(self, event):
+
+		print(f"{self.master.pencilColor}  xx  {self.canvas.keyDraw}")
+		
+		if self.canvas.keyDraw and self.master.pencilColor == "red" :
 			x, y = event.x, event.y
 			rect = self.canvas.create_line(x, y, self.x, self.y, \
 					fill=self.canvas.lineColor, width=self.canvas.lineWidth,)
 			self.x ,self.y = x, y
 			self.canvas.lastMoves.append(rect)
 
-		elif self.canvas.keyOverlay:
 
-			self.get_pixel_val()
-			x, y = event.x, event.y
-			rect = self.canvas.create_rectangle(x, y, x+self.canvas.lineWidth, y+self.canvas.lineWidth,
-					fill=self.canvas.lineColor, outline=self.canvas.lineColor)
-			
-
-
-			self.x ,self.y = x, y
-			self.canvas.lastMoves.append(rect)
-
-	
-	def get_pixel_val(self):	
-		im = Image.open(self.imagePath).convert('RGB')
-		pixlist = list()
-		#TODO highlighter
-
-
-		r, g, b = im.getpixel((self.x, self.y))
-
-		g = g+100
-		b = b+100
-		if r > 255 : r = 255 
-		if g > 255: g = 255
-		if b > 255: b = 255 
-		a = "#{:02x}{:02x}{:02x}".format(r,g,b)
-		self.canvas.lineColor = a
-		print(a)
 
 
 	
@@ -222,34 +194,82 @@ class Sidebar():
 	def __init__(self, master=None, canvas=None):
 		self.master = master
 		self.canvas = canvas
-		
+		self.sidebar = None
+		self.draw_icon = None
+		self.canvas.pencilButtonClicked = False
 
-		sidebar = tk.Frame(self.master, width=self.master.width,bd=0, bg='white', 
+
+
+		
+		self.sidebarObj()
+		self.color_change()
+		self.brush_size()
+		self.pencil()
+
+	def brush_size(self):
+		self.canvas.lineWidthLabel = tk.StringVar()
+
+		self.brush_size_label = tk.Label(self.sidebar, width=3, height=1,
+					bg="white", relief="sunken")
+		#self.brush_size_label["text"] = self.canvas.lineWidth
+		self.canvas.lineWidthLabel.set("1")
+		self.brush_size_label["textvariable"] = self.canvas.lineWidthLabel
+		self.brush_size_label.pack(side="right", anchor="ne")
+
+	def sidebarObj(self):
+		self.sidebar = tk.Frame(self.master, width=self.master.width,bd=0, bg='white', 
 					height=40,  borderwidth=0, highlightcolor="blue", 
 					highlightbackground="yellow", cursor="arrow", relief="flat")
 
-		sidebar.pack(expand=True, fill='both', side='top', anchor='n', padx=0, pady=0)
+		self.sidebar.pack(expand=True, fill='both', side='top', anchor='n', padx=0, pady=0)
 
+
+	def color_change(self):
 		try:
 			self.icon = tk.PhotoImage(file="palette.png")
 		except:
 			self.icon = tk.PhotoImage(width=1, height=1)
 
 
-		self.button1 = tk.Button(sidebar, width=1, heigh=1, bg="white",
+		self.button1 = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
 								image = self.icon, highlightcolor="green",  
 								cursor="arrow", command=self.turn_red,
-								compound="center")
+								compound="left")
 		
 		self.button1.pack(side="left", anchor="nw")
 
 		self.button1.configure(height=15, width=20)
-	
+
+
+	def pencil(self):
+
+		self.draw_icon = tk.PhotoImage(width=1, height=1)
+		self.pencil = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+								image = self.draw_icon, highlightcolor="green",  
+								cursor="arrow", command=self.set_pencil,
+								compound="center", text="\u270E", fg="black")
+		self.pencil.pack(side="left", anchor="nw")
+		self.pencil.configure(height=15, width=5)
+
 	def turn_red(self):
 		print("CLICKED")
 		self.canvas.lineColor = colorchooser.askcolor(title ="Choose color",
 								color=self.canvas.lineColor)[-1:][0]
-		print(self.canvas.lineColor)
+
+	def set_pencil(self):
+		
+		if self.pencil["fg"] == "black":		
+			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
+			self.pencil.configure(bg="#f9ffbd")
+			self.pencil.configure(fg="red")
+		else:
+			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
+			self.pencil.configure(bg="white")
+			self.pencil.configure(fg="black")
+
+		self.master.pencilColor = self.pencil["fg"]
+
+
 
 def show_help():
 	print("""./imageEditor.py
@@ -273,7 +293,7 @@ except:
 
 
 root = tk.Tk()
-
+pencilDraw = None
 #root.eval('tk::PlaceWindow . center')
 
 app = Application(img, master=root)
