@@ -36,6 +36,14 @@ class Application(tk.Frame):
 		self.canvas.lineColor = "#ff0000"
 		self.canvas.lastMoves = list()
 		self.canvas.undoList = []
+
+		self.master.pencilColor = None
+		self.master.rectangleColor = None
+		self.master.color_picker = None
+		self.master.xrec =  None
+		self.master.yrec =  None
+		self.master.rect = None
+		self.master.line = None
 		#self.canvas.PencilDraw = False
 
 	def window_config(self):
@@ -73,7 +81,7 @@ class Application(tk.Frame):
 	def convert_image(self, img):
 		self.bgImage = ImageTk.PhotoImage(Image.open(img), master=self.master)
 		self.get_sizes()
-		self.set_bg_image()	
+		self.set_bg_image()
 		#self.window_config()
 		self.pack(padx=0, pady=0)
 
@@ -94,7 +102,17 @@ class Application(tk.Frame):
 
 	def key_pressed(self, event):
 		x, y = event.x, event.y 
-		Draw(self.master, self.canvas).line( x, y)
+ 
+		if self.master.pencilColor == "red":
+			Draw(self.master, self.canvas).line( x, y)
+
+
+		elif self.master.rectangleColor == "red":
+			Draw(self.master, self.canvas).rectangle( x, y)
+		elif self.master.color_picker == "red":
+			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
+
+		
 	
 	
 	def key_released(self, event):
@@ -138,9 +156,10 @@ class Application(tk.Frame):
 
 
 class Draw():
-	def __init__(self, master=None, canvas=None):
+	def __init__(self, master=None, canvas=None, imagePath=None):
 		self.master = master
 		self.canvas = canvas
+		self.imagePath = imagePath
 
 		#self.canvas.keyDraw = False
 		
@@ -155,56 +174,109 @@ class Draw():
 		self.master.bind('<Motion>', self.motion)
 
 
+	def rectangle(self, x, y):
+		
+		self.y = y
+		self.x = x
+		self.canvas.keyDraw = True
+		self.master.bind('<Motion>', self.motion)
+
+	def get_pixel_val(self, x, y):
+		
+		im = Image.open(self.imagePath).convert('RGB')	
+		pixlist = list()	
+		#TODO highlighter	
+
+		r, g, b = im.getpixel((x, y))	
+	
+		if r > 255 : r = 255 	
+		if g > 255: g = 255	
+		if b > 255: b = 255 	
+		a = "#{:02x}{:02x}{:02x}".format(r,g,b)	
+		self.canvas.lineColor = a	
+		print(a)
+
 
 	def key_released(self):
 		self.keyDraw = False
 		self.keyOverlay = False
 		self.canvas.keyDraw = False
+
+		self.master.rect = None
+		self.master.xrec =  None
+		self.master.yrec = None
+
 		self.canvas.undoList.append(list(self.canvas.lastMoves))
 		self.canvas.lastMoves = []
 
 		
 	def undo(self):
 		try:
+
 			for elem in self.canvas.undoList[-1:][0]:				
 				self.canvas.delete(elem)			
 			del self.canvas.undoList[-1:]
 		except:
-			pass
+			del self.canvas.undoList[-1:]
+
 
 
 
 	def motion(self, event):
-
-		print(f"{self.master.pencilColor}  xx  {self.canvas.keyDraw}")
 		
+
 		if self.canvas.keyDraw and self.master.pencilColor == "red" :
+			
 			x, y = event.x, event.y
-			rect = self.canvas.create_line(x, y, self.x, self.y, \
-					fill=self.canvas.lineColor, width=self.canvas.lineWidth,)
+			#rect = self.canvas.create_line(x, y, self.x, self.y, \
+			#		fill=self.canvas.lineColor, width=self.canvas.lineWidth,)
+			self.master.line = self.canvas.create_line(self.x, self.y,x, y,  \
+					fill=self.canvas.lineColor, width=self.canvas.lineWidth)
+
 			self.x ,self.y = x, y
-			self.canvas.lastMoves.append(rect)
+			self.canvas.lastMoves.append(self.master.line)
+
+		
+		elif self.canvas.keyDraw and self.master.rectangleColor == "red":
+			self.canvas.delete(self.master.rect)
+			if self.master.xrec ==  None:
+					self.master.xrec =  event.x
+					self.master.yrec =   event.y
+
+
+			x, y = event.x, event.y
+			self.master.rect = self.canvas.create_rectangle(self.master.xrec, \
+				self.master.yrec,x, y, fill=self.canvas.lineColor,\
+				outline=self.canvas.lineColor, width=self.canvas.lineWidth,)
+			self.x ,self.y = x, y
+			self.canvas.lastMoves.append(self.master.rect)
+
+		elif self.canvas.keyDraw and self.master.color_picker == "red":
+			print(self.canvas.lineColor)
 
 
 
 
-	
+
 
 class Sidebar():
 	def __init__(self, master=None, canvas=None):
 		self.master = master
 		self.canvas = canvas
 		self.sidebar = None
-		self.draw_icon = None
+	
 		self.canvas.pencilButtonClicked = False
-
-
 
 		
 		self.sidebarObj()
 		self.color_change()
 		self.brush_size()
 		self.pencil()
+		self.rectangle()
+		self.color_picker_button()
+
+	
+
 
 	def brush_size(self):
 		self.canvas.lineWidthLabel = tk.StringVar()
@@ -223,7 +295,6 @@ class Sidebar():
 
 		self.sidebar.pack(expand=True, fill='both', side='top', anchor='n', padx=0, pady=0)
 
-
 	def color_change(self):
 		try:
 			self.icon = tk.PhotoImage(file="palette.png")
@@ -240,7 +311,6 @@ class Sidebar():
 
 		self.button1.configure(height=15, width=20)
 
-
 	def pencil(self):
 
 		self.draw_icon = tk.PhotoImage(width=1, height=1)
@@ -250,6 +320,26 @@ class Sidebar():
 								compound="center", text="\u270E", fg="black")
 		self.pencil.pack(side="left", anchor="nw")
 		self.pencil.configure(height=15, width=5)
+
+	def rectangle(self):
+
+		self.rectangle_icon = tk.PhotoImage(width=1, height=1)
+		self.rectangle = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+								image = self.rectangle_icon, highlightcolor="green",  
+								cursor="arrow", command=self.set_rectangle,
+								compound="center", text="\u25A1", fg="black")
+		self.rectangle.pack(side="left", anchor="nw")
+		self.rectangle.configure(height=15, width=5)
+
+	def color_picker_button(self):
+		self.color_picker_icon = tk.PhotoImage(width=1, height=1)
+		self.color_picker = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+								image = self.color_picker_icon, highlightcolor="green",  
+								cursor="arrow", command=self.set_color_picker,
+								compound="center", text="c", fg="black")
+		
+		self.color_picker.pack(side="left", anchor="nw")
+		self.color_picker.configure(height=15, width=5)
 
 	def turn_red(self):
 		print("CLICKED")
@@ -262,12 +352,65 @@ class Sidebar():
 			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
 			self.pencil.configure(bg="#f9ffbd")
 			self.pencil.configure(fg="red")
+
+			self.rectangle.configure(bg="white")
+			self.rectangle.configure(fg="black")
+
+			self.color_picker.configure(bg="white")
+			self.color_picker.configure(fg="black")
+
 		else:
 			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
 			self.pencil.configure(bg="white")
 			self.pencil.configure(fg="black")
 
 		self.master.pencilColor = self.pencil["fg"]
+		self.master.rectangleColor = self.rectangle["fg"]
+		self.master.color_picker = self.color_picker["fg"]
+
+	def set_rectangle(self):
+		
+		if self.rectangle["fg"] == "black":		
+			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
+			self.rectangle.configure(bg="#f9ffbd")
+			self.rectangle.configure(fg="red")
+
+			self.pencil.configure(bg="white")
+			self.pencil.configure(fg="black")
+
+			self.color_picker.configure(bg="white")
+			self.color_picker.configure(fg="black")
+
+		else:
+			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
+			self.rectangle.configure(bg="white")
+			self.rectangle.configure(fg="black")
+
+		self.master.pencilColor = self.pencil["fg"]
+		self.master.rectangleColor = self.rectangle["fg"]
+		self.master.color_picker = self.color_picker["fg"]
+
+	def set_color_picker(self):
+		if self.color_picker["fg"] == "black":		
+			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
+			self.color_picker.configure(bg="#f9ffbd")
+			self.color_picker.configure(fg="red")
+
+			self.pencil.configure(bg="white")
+			self.pencil.configure(fg="black")
+
+			self.rectangle.configure(bg="white")
+			self.rectangle.configure(fg="black")
+		else:
+			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
+			self.color_picker.configure(bg="white")
+			self.color_picker.configure(fg="black")
+
+		self.master.pencilColor = self.pencil["fg"]
+		self.master.rectangleColor = self.rectangle["fg"]
+		self.master.color_picker = self.color_picker["fg"]
+
+
 
 
 
@@ -300,3 +443,24 @@ app = Application(img, master=root)
 app.imgSave = imgSave
 
 app.mainloop()
+
+
+
+
+# def get_pixel_val(self):		
+# 		im = Image.open(self.imagePath).convert('RGB')	
+# 		pixlist = list()	
+# 		#TODO highlighter	
+
+
+
+# 		r, g, b = im.getpixel((self.x, self.y))	
+
+# 		g = g+100	
+# 		b = b+100	
+# 		if r > 255 : r = 255 	
+# 		if g > 255: g = 255	
+# 		if b > 255: b = 255 	
+# 		a = "#{:02x}{:02x}{:02x}".format(r,g,b)	
+# 		self.canvas.lineColor = a	
+# 		print(a)
