@@ -41,6 +41,7 @@ class Application(tk.Frame):
 		self.master.rectangleColor = None
 		self.master.rectangle_frameColor = None
 		self.master.color_picker = None
+		self.master.ovalColor = None
 		self.master.button1 = None
 
 		self.master.xrec =  None
@@ -109,7 +110,8 @@ class Application(tk.Frame):
 			self.master.pencilColor  		{self.master.pencilColor}
 			self.master.rectangleColor  		{self.master.rectangleColor} 
 			self.master.rectangle_frameColor	{self.master.rectangle_frameColor}  	
-			self.master.color_picker  	     {self.master.color_picker}
+			self.master.color_picker  	    	{self.master.color_picker}
+			self.master.ovalColor  	    		{self.master.ovalColor}
 			"""
 			)
 		x, y = event.x, event.y 
@@ -123,6 +125,10 @@ class Application(tk.Frame):
 		
 		elif self.master.rectangle_frameColor == "red":
 			Draw(self.master, self.canvas).rectangle_frame( x, y)
+
+		elif self.master.ovalColor == "red":
+			Draw(self.master, self.canvas).oval( x, y)
+
 
 		elif self.master.color_picker == "red":
 			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
@@ -204,6 +210,13 @@ class Draw():
 		self.canvas.keyDraw = True
 		self.master.bind('<Motion>', self.motion)
 
+	def oval(self, x, y):
+		
+		self.y = y
+		self.x = x
+		self.canvas.keyDraw = True
+		self.master.bind('<Motion>', self.motion)
+
 
 	def get_pixel_val(self, x, y):
 		
@@ -227,6 +240,7 @@ class Draw():
 		self.canvas.keyDraw = False
 
 		self.master.rect = None
+		self.master.oval = None
 		self.master.xrec =  None
 		self.master.yrec = None
 
@@ -248,7 +262,7 @@ class Draw():
 
 	def motion(self, event):
 		
-
+		#draw line
 		if self.canvas.keyDraw and self.master.pencilColor == "red" :
 			
 			x, y = event.x, event.y
@@ -260,7 +274,7 @@ class Draw():
 			self.x ,self.y = x, y
 			self.canvas.lastMoves.append(self.master.line)
 
-		
+		#draw filled rectangle		
 		elif self.canvas.keyDraw and self.master.rectangleColor == "red":
 			self.canvas.delete(self.master.rect)
 			if self.master.xrec ==  None:
@@ -275,24 +289,46 @@ class Draw():
 			self.x ,self.y = x, y
 			self.canvas.lastMoves.append(self.master.rect)
 
+		#draw unfilled rectangle
 		elif self.canvas.keyDraw and self.master.rectangle_frameColor == "red":
-			print("elif self.canvas.keyDraw and self.master.rectangle_frameColor == ")
+			
 			self.canvas.delete(self.master.rect)
 			if self.master.xrec ==  None:
 					self.master.xrec =  event.x
 					self.master.yrec =   event.y
 
-
 			x, y = event.x, event.y
+
 			self.master.rect = self.canvas.create_rectangle(self.master.xrec, \
 				self.master.yrec,x, y, outline=self.canvas.lineColor, 
-				width=self.canvas.lineWidth)
+			 	width=self.canvas.lineWidth)
 			self.x ,self.y = x, y
+
 			self.canvas.lastMoves.append(self.master.rect)
 
+		#draw oval
+		elif self.canvas.keyDraw and self.master.ovalColor == "red":
+			try:
+				self.canvas.delete(self.master.oval)
+			except:
+				pass
+			if self.master.xrec ==  None:
+					self.master.xrec =  event.x
+					self.master.yrec =   event.y
+
+			x, y = event.x, event.y
+
+						
+			self.master.oval = self.canvas.create_oval(self.master.xrec, \
+				self.master.yrec,x, y, outline=self.canvas.lineColor, 
+				width=self.canvas.lineWidth)
+
+			self.x ,self.y = x, y
 			
-		elif self.canvas.keyDraw and self.master.color_picker == "red":
-			print(self.canvas.lineColor)
+
+			self.canvas.lastMoves.append(self.master.oval)
+
+
 
 
 
@@ -314,6 +350,7 @@ class Sidebar():
 		self.pencil()
 		self.rectangle()
 		self.rectangle_frame()
+		self.oval()
 		self.color_picker_button()
 
 	
@@ -324,7 +361,7 @@ class Sidebar():
 
 		self.brush_size_label = tk.Label(self.sidebar, width=3, height=1,
 					bg="white", relief="sunken")
-		#self.brush_size_label["text"] = self.canvas.lineWidth
+		
 		self.canvas.lineWidthLabel.set("1")
 		self.brush_size_label["textvariable"] = self.canvas.lineWidthLabel
 		self.brush_size_label.pack(side="right", anchor="ne")
@@ -360,7 +397,7 @@ class Sidebar():
 		self.pencil.configure(height=15, width=5)
 
 	def rectangle(self):
-		#\ rectangle
+
 		self.rectangle_icon = tk.PhotoImage(width=1, height=1)
 		self.rectangle = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
 								image = self.rectangle_icon, highlightcolor="green",  
@@ -380,6 +417,24 @@ class Sidebar():
 		self.rectangle_frame.pack(side="left", anchor="nw")
 		self.rectangle_frame.configure(height=15, width=5)
 
+	
+
+
+
+	def oval(self):
+
+		self.oval_icon = tk.PhotoImage(width=1, height=1)
+		self.oval = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+								image = self.oval_icon, highlightcolor="green",  
+								cursor="arrow", command=self.set_oval,
+								compound="center", text="\u0FC0 ", fg="black",)
+
+		self.oval.pack(side="left", anchor="nw")
+		self.oval.configure(height=15, width=5)
+
+
+
+
 
 	def color_picker_button(self):
 		self.color_picker_icon = tk.PhotoImage(width=1, height=1)
@@ -397,113 +452,81 @@ class Sidebar():
 								color=self.canvas.lineColor)[-1:][0]
 		self.master.button1.configure(bg = self.canvas.lineColor)
 
-	def set_pencil(self):
-		
-		if self.pencil["fg"] == "black":		
-			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
+
+	def set_config_buttons(self, pencil=None, rectangle=None,
+		rectangle_frame=None, color_picker=None, oval=None):
+
+		if rectangle_frame == None:
+			self.rectangle_frame.configure(bg="white")
+			self.rectangle_frame.configure(fg="black")
+		else:
+			self.rectangle_frame.configure(bg="#f9ffbd")
+			self.rectangle_frame.configure(fg="red")
+				
+
+		if pencil == None:
+			self.pencil.configure(bg="white")
+			self.pencil.configure(fg="black")
+		else:
 			self.pencil.configure(bg="#f9ffbd")
 			self.pencil.configure(fg="red")
 
+
+		if rectangle == None:
 			self.rectangle.configure(bg="white")
 			self.rectangle.configure(fg="black")
+		else:
+			self.rectangle.configure(bg="#f9ffbd")
+			self.rectangle.configure(fg="red")
 
-			self.rectangle_frame.configure(bg="white")
-			self.rectangle_frame.configure(fg="black")
 
+		if color_picker == None:
 			self.color_picker.configure(bg="white")
 			self.color_picker.configure(fg="black")
-
 		else:
-			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
-			self.pencil.configure(bg="white")
-			self.pencil.configure(fg="black")
+			self.color_picker.configure(bg="#f9ffbd")
+			self.color_picker.configure(fg="red")
+
+
+		if oval == None:
+			self.oval.configure(bg="white")
+			self.oval.configure(fg="black")
+		else:
+			self.oval.configure(bg="#f9ffbd")
+			self.oval.configure(fg="red")
 
 		self.master.pencilColor = self.pencil["fg"]
 		self.master.rectangleColor = self.rectangle["fg"]
 		self.master.rectangle_frameColor = self.rectangle_frame["fg"]
 		self.master.color_picker = self.color_picker["fg"]
+		self.master.ovalColor = self.oval["fg"]
+
+
+	def set_pencil(self):
+		
+		if self.pencil["fg"] == "black":		
+			self.set_config_buttons(pencil=True)
 
 	def set_rectangle(self):
 		
 		if self.rectangle["fg"] == "black":		
-			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
-			self.rectangle.configure(bg="#f9ffbd")
-			self.rectangle.configure(fg="red")
-
-			self.rectangle_frame.configure(bg="white")
-			self.rectangle_frame.configure(fg="black")
-
-			self.pencil.configure(bg="white")
-			self.pencil.configure(fg="black")
-
-			self.color_picker.configure(bg="white")
-			self.color_picker.configure(fg="black")
-
-
-		else:
-			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
-			self.rectangle.configure(bg="white")
-			self.rectangle.configure(fg="black")
-
-		self.master.pencilColor = self.pencil["fg"]
-		self.master.rectangleColor = self.rectangle["fg"]
-		self.master.rectangle_frameColor = self.rectangle_frame["fg"]
-		self.master.color_picker = self.color_picker["fg"]
+			self.set_config_buttons(rectangle=True)
+	
 
 	def set_rectangle_frame(self):
-		print("set_rectangle_frame")
+
 		if self.rectangle_frame["fg"] == "black":		
-			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
-			self.rectangle_frame.configure(bg="#f9ffbd")
-			self.rectangle_frame.configure(fg="red")
+			self.set_config_buttons(rectangle_frame=True)
 
-			self.pencil.configure(bg="white")
-			self.pencil.configure(fg="black")
 
-			self.rectangle.configure(bg="white")
-			self.rectangle.configure(fg="black")
-
-			self.color_picker.configure(bg="white")
-			self.color_picker.configure(fg="black")
-
-		else:
-			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
-			self.rectangle_frame.configure(bg="white")
-			self.rectangle_frame.configure(fg="black")
-
-		self.master.pencilColor = self.pencil["fg"]
-		self.master.rectangleColor = self.rectangle["fg"]
-		self.master.rectangle_frameColor = self.rectangle_frame["fg"]
-		self.master.color_picker = self.color_picker["fg"]
+	def set_oval(self):
+		if self.oval["fg"] == "black":		
+			self.set_config_buttons(oval=True)
 
 
 	def set_color_picker(self):
 		if self.color_picker["fg"] == "black":		
-			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
-			self.color_picker.configure(bg="#f9ffbd")
-			self.color_picker.configure(fg="red")
-
-			self.rectangle_frame.configure(bg="white")
-			self.rectangle_frame.configure(fg="black")
-
-
-			self.pencil.configure(bg="white")
-			self.pencil.configure(fg="black")
-
-			self.rectangle.configure(bg="white")
-			self.rectangle.configure(fg="black")
-		else:
-			#print(f"self.canvas.PencilDraw {self.canvas.PencilDraw}" )
-			self.color_picker.configure(bg="white")
-			self.color_picker.configure(fg="black")
-
-		self.master.pencilColor = self.pencil["fg"]
-		self.master.rectangleColor = self.rectangle["fg"]
-		self.master.rectangle_frameColor = self.rectangle_frame["fg"]
-		self.master.color_picker = self.color_picker["fg"]
-
-
-
+			self.set_config_buttons(color_picker=True)			
 
 
 def show_help():
