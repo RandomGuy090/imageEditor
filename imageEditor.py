@@ -42,6 +42,7 @@ class Application(tk.Frame):
 		self.master.rectangle_frameColor = None
 		self.master.color_picker = None
 		self.master.ovalColor = None
+		self.master.ovalFilledColor = None
 		self.master.button1 = None
 
 		self.master.xrec =  None
@@ -112,6 +113,7 @@ class Application(tk.Frame):
 			self.master.rectangle_frameColor	{self.master.rectangle_frameColor}  	
 			self.master.color_picker  	    	{self.master.color_picker}
 			self.master.ovalColor  	    		{self.master.ovalColor}
+			self.master.ovalFilledColor			{self.master.ovalFilledColor}
 			"""
 			)
 		x, y = event.x, event.y 
@@ -129,10 +131,13 @@ class Application(tk.Frame):
 		elif self.master.ovalColor == "red":
 			Draw(self.master, self.canvas).oval( x, y)
 
-
+		elif self.master.ovalFilledColor == "red":
+			Draw(self.master, self.canvas,self.imagePath).ovalFilled(x, y)
+			
 		elif self.master.color_picker == "red":
 			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
 			self.master.button1.configure(bg = self.canvas.lineColor)
+
 
 		
 	
@@ -217,6 +222,13 @@ class Draw():
 		self.canvas.keyDraw = True
 		self.master.bind('<Motion>', self.motion)
 
+	def ovalFilled(self, x, y):
+		
+		self.y = y
+		self.x = x
+		self.canvas.keyDraw = True
+		self.master.bind('<Motion>', self.motion)
+
 
 	def get_pixel_val(self, x, y):
 		
@@ -236,11 +248,11 @@ class Draw():
 
 	def key_released(self):
 		self.keyDraw = False
-		self.keyOverlay = False
 		self.canvas.keyDraw = False
 
 		self.master.rect = None
 		self.master.oval = None
+		self.master.ovalFilled = None
 		self.master.xrec =  None
 		self.master.yrec = None
 
@@ -317,7 +329,6 @@ class Draw():
 					self.master.yrec =   event.y
 
 			x, y = event.x, event.y
-
 						
 			self.master.oval = self.canvas.create_oval(self.master.xrec, \
 				self.master.yrec,x, y, outline=self.canvas.lineColor, 
@@ -325,8 +336,27 @@ class Draw():
 
 			self.x ,self.y = x, y
 			
-
 			self.canvas.lastMoves.append(self.master.oval)
+
+		elif self.canvas.keyDraw and self.master.ovalFilledColor == "red":
+			try:
+				self.canvas.delete(self.master.ovalFilled)
+			except:
+				pass
+			if self.master.xrec ==  None:
+					self.master.xrec =  event.x
+					self.master.yrec =   event.y
+
+			x, y = event.x, event.y
+
+						
+			self.master.ovalFilled = self.canvas.create_oval(self.master.xrec, \
+				self.master.yrec,x, y, outline=self.canvas.lineColor, 
+				width=self.canvas.lineWidth, fill=self.canvas.lineColor)
+
+			self.x ,self.y = x, y
+			
+			self.canvas.lastMoves.append(self.master.ovalFilled)
 
 
 
@@ -351,6 +381,7 @@ class Sidebar():
 		self.rectangle()
 		self.rectangle_frame()
 		self.oval()
+		self.ovalFilled()
 		self.color_picker_button()
 
 	
@@ -417,24 +448,27 @@ class Sidebar():
 		self.rectangle_frame.pack(side="left", anchor="nw")
 		self.rectangle_frame.configure(height=15, width=5)
 
-	
-
-
-
 	def oval(self):
-
+		# unicode filled circle
 		self.oval_icon = tk.PhotoImage(width=1, height=1)
 		self.oval = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
 								image = self.oval_icon, highlightcolor="green",  
 								cursor="arrow", command=self.set_oval,
-								compound="center", text="\u0FC0 ", fg="black",)
+								compound="center", text="\u25CB", fg="black",)
 
 		self.oval.pack(side="left", anchor="nw")
 		self.oval.configure(height=15, width=5)
 
+	def ovalFilled(self):
+		#\u25CF unicode filled circle
+		self.ovalFilled_icon = tk.PhotoImage(width=1, height=1)
+		self.ovalFilled = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+								image = self.ovalFilled_icon, highlightcolor="green",  
+								cursor="arrow", command=self.set_oval_filled,
+								compound="center", text="\u25CF", fg="black",)
 
-
-
+		self.ovalFilled.pack(side="left", anchor="nw")
+		self.ovalFilled.configure(height=15, width=5)
 
 	def color_picker_button(self):
 		self.color_picker_icon = tk.PhotoImage(width=1, height=1)
@@ -452,9 +486,9 @@ class Sidebar():
 								color=self.canvas.lineColor)[-1:][0]
 		self.master.button1.configure(bg = self.canvas.lineColor)
 
-
+	
 	def set_config_buttons(self, pencil=None, rectangle=None,
-		rectangle_frame=None, color_picker=None, oval=None):
+		rectangle_frame=None, color_picker=None, oval=None, ovalFilled=None):
 
 		if rectangle_frame == None:
 			self.rectangle_frame.configure(bg="white")
@@ -495,12 +529,20 @@ class Sidebar():
 			self.oval.configure(bg="#f9ffbd")
 			self.oval.configure(fg="red")
 
+		if ovalFilled == None:
+			self.ovalFilled.configure(bg="white")
+			self.ovalFilled.configure(fg="black")
+		else:
+			self.ovalFilled.configure(bg="#f9ffbd")
+			self.ovalFilled.configure(fg="red")
+
+
 		self.master.pencilColor = self.pencil["fg"]
 		self.master.rectangleColor = self.rectangle["fg"]
 		self.master.rectangle_frameColor = self.rectangle_frame["fg"]
 		self.master.color_picker = self.color_picker["fg"]
 		self.master.ovalColor = self.oval["fg"]
-
+		self.master.ovalFilledColor = self.ovalFilled["fg"]
 
 	def set_pencil(self):
 		
@@ -512,7 +554,6 @@ class Sidebar():
 		if self.rectangle["fg"] == "black":		
 			self.set_config_buttons(rectangle=True)
 	
-
 	def set_rectangle_frame(self):
 
 		if self.rectangle_frame["fg"] == "black":		
@@ -522,6 +563,10 @@ class Sidebar():
 	def set_oval(self):
 		if self.oval["fg"] == "black":		
 			self.set_config_buttons(oval=True)
+
+	def set_oval_filled(self):
+		if self.ovalFilled["fg"] == "black":		
+			self.set_config_buttons(ovalFilled=True)
 
 
 	def set_color_picker(self):
