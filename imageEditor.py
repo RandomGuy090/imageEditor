@@ -15,8 +15,9 @@ class Application(tk.Frame):
 		super().__init__(master)
 		self.master = master
 		self.imagePath = image
+		self.resize = True
 
-		image = Image.open(img)
+
 	
 		self.canvas_config()
 		self.master.width = self.width
@@ -49,12 +50,15 @@ class Application(tk.Frame):
 		self.master.yrec =  None
 		self.master.rect = None
 		self.master.line = None
-		#self.canvas.PencilDraw = False
+
+		
+
 
 	def window_config(self):
+
 		self.master.geometry(f"{self.width}x{self.height+22}")
 		self.master.title("imageEditor")
-		#self.master.resizable(False, False)
+		
 		#frameless window
 		#self.master.overrideredirect(True) 
 	  
@@ -79,13 +83,31 @@ class Application(tk.Frame):
 		self.master.bind('<Key-equal>', self.bigger_brush)
 		#make brush smaller
 		self.master.bind('<Key-minus>', self.smaller_brush)
+		#when window size changes
+		self.master.bind('<Configure>', self.resizeWindow)
+
+	def resizeWindow(self, event):
+
+		self.width = self.master.winfo_width() 
+		self.height = self.master.winfo_height()-22
+		print(f"w {self.width}")
+		print(f"h: {self.height}")
+	
+		self.canvas.config(width=self.width, height=self.height)
+		
 
 
 
 	
 	def convert_image(self, img):
-		self.bgImage = ImageTk.PhotoImage(Image.open(img), master=self.master)
-		self.get_sizes()
+		try:
+			self.bgImage = ImageTk.PhotoImage(Image.open(img), master=self.master)
+			self.get_sizes()
+		except:
+			print("no image, creating new one")
+			self.height = 300
+			self.width = 450
+
 		self.set_bg_image()
 		#self.window_config()
 		self.pack(padx=0, pady=0)
@@ -100,22 +122,15 @@ class Application(tk.Frame):
 
 	def set_bg_image(self):
 
-		self.canvas = tk.Canvas(root, width=self.width, heigh=self.height)
-		self.canvas.create_image(0,0,anchor="nw", image=self.bgImage)
+		self.canvas = tk.Canvas(root, width=self.width, heigh=self.height, bg="white")
+		try:
+			self.canvas.create_image(0,0,anchor="nw", image=self.bgImage)
+			self.canvas.pack(fill="both", expand="yes")
+		except:
 
-		self.canvas.pack()
+			self.canvas.pack(fill="both", expand="yes")
 
 	def key_pressed(self, event):
-		print(
-			f"""
-			self.master.pencilColor  		{self.master.pencilColor}
-			self.master.rectangleColor  		{self.master.rectangleColor} 
-			self.master.rectangle_frameColor	{self.master.rectangle_frameColor}  	
-			self.master.color_picker  	    	{self.master.color_picker}
-			self.master.ovalColor  	    		{self.master.ovalColor}
-			self.master.ovalFilledColor			{self.master.ovalFilledColor}
-			"""
-			)
 		x, y = event.x, event.y 
  
 		if self.master.pencilColor == "red":
@@ -151,6 +166,14 @@ class Application(tk.Frame):
 	def save_img(self, event):
 		print("SAVED")
 		#self.canvas.pack()
+		print(f"self height {self.height}")
+		print(f"self width {self.width}")
+
+		bgImage = ImageTk.PhotoImage(Image.new("RGB", (self.width, self.height), color="#ffffff" ), master=self.master)
+		self.canvas.pack(fill="both", expand="yes")
+
+
+
 		ps = self.canvas.postscript(colormode="color", height=self.height, width=self.width) 
 		
 		img = Image.open(io.BytesIO(ps.encode('utf-8')))
@@ -188,10 +211,6 @@ class Draw():
 		self.canvas = canvas
 		self.imagePath = imagePath
 
-		#self.canvas.keyDraw = False
-		
-		#TODO image Handler
-		#self.imagePath = "gutman.jpg"
 				
 
 	def line(self, x, y):
@@ -278,8 +297,6 @@ class Draw():
 		if self.canvas.keyDraw and self.master.pencilColor == "red" :
 			
 			x, y = event.x, event.y
-			#rect = self.canvas.create_line(x, y, self.x, self.y, \
-			#		fill=self.canvas.lineColor, width=self.canvas.lineWidth,)
 			self.master.line = self.canvas.create_line(self.x, self.y,x, y,  \
 					fill=self.canvas.lineColor, width=self.canvas.lineWidth)
 
@@ -399,28 +416,28 @@ class Sidebar():
 
 	def sidebarObj(self):
 		self.sidebar = tk.Frame(self.master, width=self.master.width,bd=0, bg='white', 
-					height=40,  borderwidth=0, highlightcolor="blue", 
-					highlightbackground="yellow", cursor="arrow", relief="flat")
+					height=30,  borderwidth=0, highlightcolor="blue",  
+					highlightbackground="yellow", cursor="arrow", relief="raised")
 
-		self.sidebar.pack(expand=True, fill='both', side='top', anchor='n', padx=0, pady=0)
+		self.sidebar.pack(expand=False, fill='both', side='bottom', anchor='s', padx=0, pady=0)
 
 	def color_change(self):
 		self.icon = tk.PhotoImage(width=1, height=1)
 
 
-		self.master.button1 = tk.Button(self.sidebar, width=1, heigh=1, bg=self.canvas.lineColor,
+		self.master.button1 = tk.Button(self.sidebar, width=1, heigh=1.2, bg=self.canvas.lineColor,
 								image = self.icon, highlightcolor="green",  
 								cursor="arrow", command=self.color_changer,
 								compound="left", relief="sunken")
 		
-		self.master.button1.pack(side="left", anchor="nw")
+		self.master.button1.pack(expand=False, side="left", anchor="nw")
 
-		self.master.button1.configure(height=15, width=20)
+		self.master.button1.configure(height=22, width=20)
 
 	def pencil(self):
 
 		self.draw_icon = tk.PhotoImage(width=1, height=1)
-		self.pencil = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+		self.pencil = tk.Button(self.sidebar, width=1, heigh=0.8, bg="white",
 								image = self.draw_icon, highlightcolor="green",  
 								cursor="arrow", command=self.set_pencil,
 								compound="center", text="\u270E", fg="black")
@@ -430,7 +447,7 @@ class Sidebar():
 	def rectangle(self):
 
 		self.rectangle_icon = tk.PhotoImage(width=1, height=1)
-		self.rectangle = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+		self.rectangle = tk.Button(self.sidebar, width=1, heigh=0.8, bg="white",
 								image = self.rectangle_icon, highlightcolor="green",  
 								cursor="arrow", command=self.set_rectangle,
 								compound="center", text="\u25A0", fg="black")
@@ -440,7 +457,7 @@ class Sidebar():
 	def rectangle_frame(self):
 
 		self.rectangle_frame_icon = tk.PhotoImage(width=1, height=1)
-		self.rectangle_frame = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+		self.rectangle_frame = tk.Button(self.sidebar, width=1, heigh=0.8, bg="white",
 								image = self.rectangle_frame_icon, highlightcolor="green",  
 								cursor="arrow", command=self.set_rectangle_frame,
 								compound="center", text="\u25A1", fg="black",)
@@ -451,7 +468,7 @@ class Sidebar():
 	def oval(self):
 		# unicode filled circle
 		self.oval_icon = tk.PhotoImage(width=1, height=1)
-		self.oval = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+		self.oval = tk.Button(self.sidebar, width=1, heigh=0.8, bg="white",
 								image = self.oval_icon, highlightcolor="green",  
 								cursor="arrow", command=self.set_oval,
 								compound="center", text="\u25CB", fg="black",)
@@ -462,7 +479,7 @@ class Sidebar():
 	def ovalFilled(self):
 		#\u25CF unicode filled circle
 		self.ovalFilled_icon = tk.PhotoImage(width=1, height=1)
-		self.ovalFilled = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+		self.ovalFilled = tk.Button(self.sidebar, width=1, heigh=0.8, bg="white",
 								image = self.ovalFilled_icon, highlightcolor="green",  
 								cursor="arrow", command=self.set_oval_filled,
 								compound="center", text="\u25CF", fg="black",)
@@ -472,7 +489,7 @@ class Sidebar():
 
 	def color_picker_button(self):
 		self.color_picker_icon = tk.PhotoImage(width=1, height=1)
-		self.color_picker = tk.Button(self.sidebar, width=1, heigh=1, bg="white",
+		self.color_picker = tk.Button(self.sidebar, width=1, heigh=0.8, bg="white",
 								image = self.color_picker_icon, highlightcolor="green",  
 								cursor="arrow", command=self.set_color_picker,
 								compound="center", text="c", fg="black")
@@ -587,7 +604,7 @@ if "-h" in sys.argv or "--help" in sys.argv:
 try:
 	img = sys.argv[1]
 except:
-	img = "/tmp/sscopy.png"
+	img = None
 
 try:
 	imgSave = sys.argv[2]
@@ -596,6 +613,7 @@ except:
 
 
 root = tk.Tk()
+# root.resizable(False, False)
 pencilDraw = None
 #root.eval('tk::PlaceWindow . center')
 
@@ -605,22 +623,3 @@ app.imgSave = imgSave
 app.mainloop()
 
 
-
-
-# def get_pixel_val(self):		
-# 		im = Image.open(self.imagePath).convert('RGB')	
-# 		pixlist = list()	
-# 		#TODO highlighter	
-
-
-
-# 		r, g, b = im.getpixel((self.x, self.y))	
-
-# 		g = g+100	
-# 		b = b+100	
-# 		if r > 255 : r = 255 	
-# 		if g > 255: g = 255	
-# 		if b > 255: b = 255 	
-# 		a = "#{:02x}{:02x}{:02x}".format(r,g,b)	
-# 		self.canvas.lineColor = a	
-# 		print(a)
