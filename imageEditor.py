@@ -1,13 +1,11 @@
 #!/bin/python
 
-
 from PIL import ImageTk,Image
 import tkinter as tk 
+from tkinter import filedialog as fd
 from tkinter import colorchooser
 import os, sys, io
 import pyautogui
-	
-
 
 
 class Application(tk.Frame):
@@ -52,16 +50,11 @@ class Application(tk.Frame):
 		self.master.line = None
 
 		
-
-
 	def window_config(self):
 
 		self.master.geometry(f"{self.width}x{self.height+22}")
 		self.master.title("imageEditor")
 		
-		#frameless window
-		#self.master.overrideredirect(True) 
-	  
 
 	def keybinds(self):
 		#when mouse button pressed		
@@ -75,6 +68,8 @@ class Application(tk.Frame):
 		self.master.bind('<Control-s>', self.save_img)
 		self.master.bind('<Control-c>', self.save_img)
 		self.master.bind('<space>', self.save_img)
+		#when save as ctrl+shift +s
+		self.master.bind('<Control-Shift-KeyPress-S>', self.save_img_as)
 		#when want to escape
 		self.master.bind('<Escape>', self.close)
 		self.master.bind('<Key-q>', self.close)
@@ -90,13 +85,9 @@ class Application(tk.Frame):
 
 		self.width = self.master.winfo_width() 
 		self.height = self.master.winfo_height()-22
-		print(f"w {self.width}")
-		print(f"h: {self.height}")
+
 	
 		self.canvas.config(width=self.width, height=self.height)
-		
-
-
 
 	
 	def convert_image(self, img):
@@ -104,7 +95,7 @@ class Application(tk.Frame):
 			self.bgImage = ImageTk.PhotoImage(Image.open(img), master=self.master)
 			self.get_sizes()
 		except:
-			print("no image, creating new one")
+
 			self.height = 300
 			self.width = 450
 
@@ -153,9 +144,6 @@ class Application(tk.Frame):
 			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
 			self.master.button1.configure(bg = self.canvas.lineColor)
 
-
-		
-	
 	
 	def key_released(self, event):
 		self.canvas.keyDraw =  False
@@ -164,23 +152,24 @@ class Application(tk.Frame):
 		
 
 	def save_img(self, event):
-		print("SAVED")
-		#self.canvas.pack()
-		print(f"self height {self.height}")
-		print(f"self width {self.width}")
-
 		bgImage = ImageTk.PhotoImage(Image.new("RGB", (self.width, self.height), color="#ffffff" ), master=self.master)
 		self.canvas.pack(fill="both", expand="yes")
-
-
-
+		if self.imgSave == None:
+			self.save_img_as()
 		ps = self.canvas.postscript(colormode="color", height=self.height, width=self.width) 
-		
+		img = Image.open(io.BytesIO(ps.encode('utf-8')))
+		img.save(self.imgSave, 'png')
+
+	def save_img_as(self, event=None):
+		bgImage = ImageTk.PhotoImage(Image.new("RGB", (self.width, self.height), color="#ffffff" ), master=self.master)
+		self.canvas.pack(fill="both", expand="yes")
+		f = fd.asksaveasfile(mode='w', defaultextension=".png")
+		self.imgSave = f.name
+		ps = self.canvas.postscript(colormode="color", height=self.height, width=self.width) 
 		img = Image.open(io.BytesIO(ps.encode('utf-8')))
 		img.save(self.imgSave, 'png')
 
 	def undo(self, event):
-		print("Undo")
 		Draw(self.master, self.canvas).undo()
 
 	def close(self, event):
@@ -188,7 +177,6 @@ class Application(tk.Frame):
 
 	def bigger_brush(self, event):
 		self.canvas.lineWidth = self.canvas.lineWidth + 1
-		print(f"self.canvas.lineWidth {self.canvas.lineWidth}")
 		if self.canvas.lineWidth > 15:
 			self.canvas.lineWidth = 15
 		self.canvas.lineWidthLabel.set(self.canvas.lineWidth)
@@ -196,13 +184,9 @@ class Application(tk.Frame):
 	def smaller_brush(self, event):
 
 		self.canvas.lineWidth = self.canvas.lineWidth - 1
-		print(f"self.canvas.lineWidth {self.canvas.lineWidth}")
 		if self.canvas.lineWidth <= 0:
 			self.canvas.lineWidth = 1
 		self.canvas.lineWidthLabel.set(self.canvas.lineWidth)
-
-
-
 
 
 class Draw():
@@ -262,13 +246,11 @@ class Draw():
 		if b > 255: b = 255 	
 		a = "#{:02x}{:02x}{:02x}".format(r,g,b)	
 		self.canvas.lineColor = a	
-		print(a)
 
 
 	def key_released(self):
 		self.keyDraw = False
 		self.canvas.keyDraw = False
-
 		self.master.rect = None
 		self.master.oval = None
 		self.master.ovalFilled = None
@@ -281,14 +263,11 @@ class Draw():
 		
 	def undo(self):
 		try:
-
 			for elem in self.canvas.undoList[-1:][0]:				
 				self.canvas.delete(elem)			
 			del self.canvas.undoList[-1:]
 		except:
 			del self.canvas.undoList[-1:]
-
-
 
 
 	def motion(self, event):
@@ -376,12 +355,6 @@ class Draw():
 			self.canvas.lastMoves.append(self.master.ovalFilled)
 
 
-
-
-
-
-
-
 class Sidebar():
 	def __init__(self, master=None, canvas=None):
 		self.master = master
@@ -390,7 +363,6 @@ class Sidebar():
 	
 		self.canvas.pencilButtonClicked = False
 
-		
 		self.sidebarObj()
 		self.color_change()
 		self.brush_size()
@@ -400,9 +372,6 @@ class Sidebar():
 		self.oval()
 		self.ovalFilled()
 		self.color_picker_button()
-
-	
-
 
 	def brush_size(self):
 		self.canvas.lineWidthLabel = tk.StringVar()
@@ -498,7 +467,7 @@ class Sidebar():
 		self.color_picker.configure(height=15, width=5)
 
 	def color_changer(self):
-		print("CLICKED")
+
 		self.canvas.lineColor = colorchooser.askcolor(title ="Choose color",
 								color=self.canvas.lineColor)[-1:][0]
 		self.master.button1.configure(bg = self.canvas.lineColor)
@@ -593,7 +562,9 @@ class Sidebar():
 
 def show_help():
 	print("""./imageEditor.py
-		usage ./imageEditor.py {path to file } {path to save file}
+		usage ./imageEditor.py {path to file} {path to save file}
+			  ./imageEditor.py {path to file} (file will be replaced) if no image, will be created
+
 		""")
 
 		
@@ -609,7 +580,10 @@ except:
 try:
 	imgSave = sys.argv[2]
 except:
-	imgSave = "/tmp/sscopy.png"
+	try:
+		imgSave = sys.argv[1]
+	except:
+		imgSave = None
 
 
 root = tk.Tk()
