@@ -391,6 +391,18 @@ class Draw():
 					self.master.yrec =   event.y
 
 			x, y = event.x, event.y
+			if self.master.shift:
+				if x > self.master.xrec and y < self.master.yrec:
+					y = (x - self.master.xrec) - self.master.yrec
+					y = -1 * y
+				
+				elif x < self.master.xrec and y < self.master.yrec:
+					y = (x - self.master.xrec) + self.master.yrec
+				elif x < self.master.xrec and y > self.master.yrec:
+					x = (y - self.master.yrec) - self.master.xrec
+					x = x *-1
+				elif x > self.master.xrec and y > self.master.yrec:
+					x = (y - self.master.yrec) + self.master.xrec
 	
 						
 			self.master.oval = self.canvas.create_oval(self.master.xrec, \
@@ -412,6 +424,18 @@ class Draw():
 					self.master.yrec =   event.y
 
 			x, y = event.x, event.y
+			if self.master.shift:
+				if x > self.master.xrec and y < self.master.yrec:
+					y = (x - self.master.xrec) - self.master.yrec
+					y = -1 * y
+				
+				elif x < self.master.xrec and y < self.master.yrec:
+					y = (x - self.master.xrec) + self.master.yrec
+				elif x < self.master.xrec and y > self.master.yrec:
+					x = (y - self.master.yrec) - self.master.xrec
+					x = x *-1
+				elif x > self.master.xrec and y > self.master.yrec:
+					x = (y - self.master.yrec) + self.master.xrec
 		
 
 						
