@@ -146,26 +146,37 @@ class Application(tk.Frame):
 
 	
 	def key_released(self, event):
+
 		self.canvas.keyDraw =  False
+
 		Draw(self.master, self.canvas).key_released()
 
 		
 
 	def save_img(self, event):
+		
 		bgImage = ImageTk.PhotoImage(Image.new("RGB", (self.width, self.height), color="#ffffff" ), master=self.master)
+		
 		self.canvas.pack(fill="both", expand="yes")
+
 		if self.imgSave == None:
 			self.save_img_as()
-		ps = self.canvas.postscript(colormode="color", height=self.height, width=self.width) 
+	
+		ps = self.canvas.postscript(colormode="color", pagewidth=self.width-1,\
+		 pageheight=self.height-1 ,height=self.height, width=self.width) 
+		img = Image.open(io.BytesIO(ps.encode('utf-8')))
 		img = Image.open(io.BytesIO(ps.encode('utf-8')))
 		img.save(self.imgSave, 'png')
+		
+
 
 	def save_img_as(self, event=None):
 		bgImage = ImageTk.PhotoImage(Image.new("RGB", (self.width, self.height), color="#ffffff" ), master=self.master)
 		self.canvas.pack(fill="both", expand="yes")
 		f = fd.asksaveasfile(mode='w', defaultextension=".png")
 		self.imgSave = f.name
-		ps = self.canvas.postscript(colormode="color", height=self.height, width=self.width) 
+		ps = self.canvas.postscript(colormode="color", height=self.height, width=self.width, \
+			pagewidth=self.width-1, pageheight=self.height-1) 
 		img = Image.open(io.BytesIO(ps.encode('utf-8')))
 		img.save(self.imgSave, 'png')
 
@@ -251,6 +262,7 @@ class Draw():
 	def key_released(self):
 		self.keyDraw = False
 		self.canvas.keyDraw = False
+
 		self.master.rect = None
 		self.master.oval = None
 		self.master.ovalFilled = None
