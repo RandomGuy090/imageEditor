@@ -6,7 +6,7 @@ from tkinter import filedialog as fd
 from tkinter import colorchooser
 import os, sys, io
 import pyautogui
-
+from math import sqrt
 
 class Application(tk.Frame):
 	def __init__(self, image, master=None ):
@@ -43,6 +43,7 @@ class Application(tk.Frame):
 		self.master.ovalColor = None
 		self.master.ovalFilledColor = None
 		self.master.button1 = None
+		self.master.shift = False
 
 		self.master.xrec =  None
 		self.master.yrec =  None
@@ -59,6 +60,9 @@ class Application(tk.Frame):
 	def keybinds(self):
 		#when mouse button pressed		
 		self.canvas.bind('<ButtonPress-1>', self.key_pressed)
+		#when mouse button pressed		
+		self.canvas.bind('<Shift-ButtonPress-1>', self.key_pressed_Shift)
+		
 		#when mouse button released
 		self.canvas.bind('<ButtonRelease-1>', self.key_released)
 		#delete all when backspace
@@ -85,8 +89,6 @@ class Application(tk.Frame):
 
 		self.width = self.master.winfo_width() 
 		self.height = self.master.winfo_height()-22
-
-	
 		self.canvas.config(width=self.width, height=self.height)
 
 	
@@ -123,10 +125,9 @@ class Application(tk.Frame):
 
 	def key_pressed(self, event):
 		x, y = event.x, event.y 
- 
+		print(f"SHIFT: {self.master.shift}")
 		if self.master.pencilColor == "red":
 			Draw(self.master, self.canvas).line( x, y)
-
 
 		elif self.master.rectangleColor == "red":
 			Draw(self.master, self.canvas).rectangle( x, y)
@@ -143,6 +144,30 @@ class Application(tk.Frame):
 		elif self.master.color_picker == "red":
 			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
 			self.master.button1.configure(bg = self.canvas.lineColor)
+
+	def key_pressed_Shift(self, event):
+		self.master.shift = True
+		x, y = event.x, event.y 
+		if self.master.pencilColor == "red":
+			Draw(self.master, self.canvas).line( x, y)
+
+		elif self.master.rectangleColor == "red":
+			Draw(self.master, self.canvas).rectangle( x, y)
+		
+		elif self.master.rectangle_frameColor == "red":
+			Draw(self.master, self.canvas).rectangle_frame( x, y)
+
+		elif self.master.ovalColor == "red":
+			Draw(self.master, self.canvas).oval( x, y)
+
+		elif self.master.ovalFilledColor == "red":
+			Draw(self.master, self.canvas,self.imagePath).ovalFilled(x, y)
+			
+		elif self.master.color_picker == "red":
+			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
+			self.master.button1.configure(bg = self.canvas.lineColor)
+
+		
 
 	
 	def key_released(self, event):
@@ -205,8 +230,7 @@ class Draw():
 		self.master = master
 		self.canvas = canvas
 		self.imagePath = imagePath
-
-				
+		print(f"shift: {self.master.shift}")
 
 	def line(self, x, y):
 		self.y = y
@@ -216,9 +240,13 @@ class Draw():
 
 
 	def rectangle(self, x, y):
-		
-		self.y = y
+		# asd
 		self.x = x
+		if not self.master.shift:
+			self.y = x
+		else:
+			self.y = y
+
 		self.canvas.keyDraw = True
 		self.master.bind('<Motion>', self.motion)
 
@@ -248,7 +276,6 @@ class Draw():
 		
 		im = Image.open(self.imagePath).convert('RGB')	
 		pixlist = list()	
-		#TODO highlighter	
 
 		r, g, b = im.getpixel((x, y))	
 	
@@ -262,6 +289,7 @@ class Draw():
 	def key_released(self):
 		self.keyDraw = False
 		self.canvas.keyDraw = False
+		self.master.shift = False
 
 		self.master.rect = None
 		self.master.oval = None
@@ -288,6 +316,7 @@ class Draw():
 		if self.canvas.keyDraw and self.master.pencilColor == "red" :
 			
 			x, y = event.x, event.y
+
 			self.master.line = self.canvas.create_line(self.x, self.y,x, y,  \
 					fill=self.canvas.lineColor, width=self.canvas.lineWidth)
 
@@ -298,11 +327,23 @@ class Draw():
 		elif self.canvas.keyDraw and self.master.rectangleColor == "red":
 			self.canvas.delete(self.master.rect)
 			if self.master.xrec ==  None:
-					self.master.xrec =  event.x
-					self.master.yrec =   event.y
+				self.master.xrec =  event.x
+				self.master.yrec =   event.y
 
-
-			x, y = event.x, event.y
+			x, y = event.x, event.y   
+			if self.master.shift:
+				if x > self.master.xrec and y < self.master.yrec:
+					y = (x - self.master.xrec) - self.master.yrec
+					y = -1 * y
+				
+				elif x < self.master.xrec and y < self.master.yrec:
+					y = (x - self.master.xrec) + self.master.yrec
+				elif x < self.master.xrec and y > self.master.yrec:
+					x = (y - self.master.yrec) - self.master.xrec
+					x = x *-1
+				elif x > self.master.xrec and y > self.master.yrec:
+					x = (y - self.master.yrec) + self.master.xrec 
+								
 			self.master.rect = self.canvas.create_rectangle(self.master.xrec, \
 				self.master.yrec,x, y, fill=self.canvas.lineColor,\
 				outline=self.canvas.lineColor, width=self.canvas.lineWidth,)
@@ -318,6 +359,7 @@ class Draw():
 					self.master.yrec =   event.y
 
 			x, y = event.x, event.y
+			
 
 			self.master.rect = self.canvas.create_rectangle(self.master.xrec, \
 				self.master.yrec,x, y, outline=self.canvas.lineColor, 
@@ -337,6 +379,7 @@ class Draw():
 					self.master.yrec =   event.y
 
 			x, y = event.x, event.y
+	
 						
 			self.master.oval = self.canvas.create_oval(self.master.xrec, \
 				self.master.yrec,x, y, outline=self.canvas.lineColor, 
@@ -345,7 +388,8 @@ class Draw():
 			self.x ,self.y = x, y
 			
 			self.canvas.lastMoves.append(self.master.oval)
-
+		
+		#draw filled oval
 		elif self.canvas.keyDraw and self.master.ovalFilledColor == "red":
 			try:
 				self.canvas.delete(self.master.ovalFilled)
@@ -356,6 +400,7 @@ class Draw():
 					self.master.yrec =   event.y
 
 			x, y = event.x, event.y
+		
 
 						
 			self.master.ovalFilled = self.canvas.create_oval(self.master.xrec, \
