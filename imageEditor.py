@@ -8,8 +8,8 @@ import os, sys, io
 import pyautogui
 from math import sqrt
 
-draw_Item_list = ["pencil", "rectangle", "rectangle_frame", 
-				"oval", "ovalFilled", "color_picker"]
+
+draw_Item_list = list()
 draw_Item = 0
 buttons_list = dict()
 
@@ -24,7 +24,6 @@ class Application(tk.Frame):
 		self.canvas_config()
 		self.master.width = self.width
 		self.master.height = self.height
-
 		sidebar = Sidebar(self.master, self.canvas)
 		self.keybinds()
 
@@ -32,7 +31,6 @@ class Application(tk.Frame):
 		self.convert_image(img)
 		self.window_config()
 
-		self.keyDraw = False
 		self.canvas.keyOverlay = False
 		self.canvas.lineWidth = 1
 		self.canvas.lineColor = "#ff0000"
@@ -50,7 +48,6 @@ class Application(tk.Frame):
 
 		
 	def window_config(self):
-
 		self.master.geometry(f"{self.width}x{self.height+22}")
 		self.master.title("imageEditor")
 		
@@ -60,7 +57,6 @@ class Application(tk.Frame):
 		self.canvas.bind('<ButtonPress-1>', self.key_pressed)
 		#when mouse button pressed		
 		self.canvas.bind('<Shift-ButtonPress-1>', self.key_pressed_Shift)
-		
 		#when mouse button released
 		self.canvas.bind('<ButtonRelease-1>', self.key_released)
 		#delete all when backspace
@@ -84,56 +80,42 @@ class Application(tk.Frame):
 		self.master.bind('<Configure>', self.resizeWindow)
 
 	def resizeWindow(self, event):
-
 		self.width = self.master.winfo_width() 
 		self.height = self.master.winfo_height()-22
 		self.canvas.config(width=self.width, height=self.height)
 
-	
 	def convert_image(self, img):
 		try:
 			self.bgImage = ImageTk.PhotoImage(Image.open(img), master=self.master)
 			self.get_sizes()
 		except:
-
 			self.height = 300
 			self.width = 450
 
 		self.set_bg_image()
-		#self.window_config()
+		self.window_config()
 		self.pack(padx=0, pady=0)
-
-
 
 	def get_sizes(self):
 		self.height = self.bgImage.height()
 		self.width = self.bgImage.width()
 		
-
-
 	def set_bg_image(self):
-
 		self.canvas = tk.Canvas(root, width=self.width, heigh=self.height, bg="white")
 		try:
 			self.canvas.create_image(0,0,anchor="nw", image=self.bgImage)
 			self.canvas.pack(fill="both", expand="yes")
 		except:
-
 			self.canvas.pack(fill="both", expand="yes")
 
 	def key_pressed(self, event):
 		x, y = event.x, event.y 
 		
 		global draw_Item, draw_Item_list
-			
-		
-		
 		if draw_Item == None:
 			return
 
-
 		if draw_Item == draw_Item_list[0]:
-
 			Draw(self.master, self.canvas).line( x, y)
 
 		elif draw_Item == draw_Item_list[1]:
@@ -150,7 +132,6 @@ class Application(tk.Frame):
 	
 		elif draw_Item == draw_Item_list[5]:
 			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
-
 			self.master.button1.configure(bg = self.canvas.lineColor)
 
 
@@ -159,7 +140,6 @@ class Application(tk.Frame):
 		self.master.shift = True
 		x, y = event.x, event.y 
 		if draw_Item == draw_Item_list[0]:
-
 			Draw(self.master, self.canvas).line( x, y)
 
 		elif draw_Item == draw_Item_list[1]:
@@ -176,7 +156,6 @@ class Application(tk.Frame):
 	
 		elif draw_Item == draw_Item_list[5]:
 			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
-
 			self.master.button1.configure(bg = self.canvas.lineColor)
 		
 
@@ -184,10 +163,7 @@ class Application(tk.Frame):
 	def key_released(self, event):
 
 		self.canvas.keyDraw =  False
-
 		Draw(self.master, self.canvas).key_released()
-
-		
 
 	def save_img(self, event):
 		
@@ -204,8 +180,6 @@ class Application(tk.Frame):
 		img = Image.open(io.BytesIO(ps.encode('utf-8')))
 		img.save(self.imgSave, 'png')
 		
-
-
 	def save_img_as(self, event=None):
 		bgImage = ImageTk.PhotoImage(Image.new("RGB", (self.width, self.height), color="#ffffff" ), master=self.master)
 		self.canvas.pack(fill="both", expand="yes")
@@ -250,7 +224,6 @@ class Draw(Application):
 		self.canvas.keyDraw = True
 		self.master.bind('<Motion>', self.motion)
 
-
 	def rectangle(self, x, y):
 		# asd
 		self.x = x
@@ -283,10 +256,11 @@ class Draw(Application):
 		self.canvas.keyDraw = True
 		self.master.bind('<Motion>', self.motion)
 
-
 	def get_pixel_val(self, x, y):
-		
-		im = Image.open(self.imagePath).convert('RGB')	
+		try:
+			im = Image.open(self.imagePath).convert('RGB')	
+		except:
+			return 
 		pixlist = list()	
 
 		r, g, b = im.getpixel((x, y))	
@@ -297,9 +271,7 @@ class Draw(Application):
 		a = "#{:02x}{:02x}{:02x}".format(r,g,b)	
 		self.canvas.lineColor = a	
 
-
 	def key_released(self):
-		self.keyDraw = False
 		self.canvas.keyDraw = False
 		self.master.shift = False
 
@@ -311,8 +283,7 @@ class Draw(Application):
 
 		self.canvas.undoList.append(list(self.canvas.lastMoves))
 		self.canvas.lastMoves = []
-
-		
+	
 	def undo(self):
 		try:
 			for elem in self.canvas.undoList[-1:][0]:				
@@ -321,11 +292,8 @@ class Draw(Application):
 		except:
 			del self.canvas.undoList[-1:]
 
-
-	
 	def motion(self, event):
 		global draw_Item, draw_Item_list
-		
 		#draw line
 		if self.canvas.keyDraw and draw_Item == draw_Item_list[0]:
 			
@@ -424,14 +392,11 @@ class Draw(Application):
 		return self.master.xrec, self.master.yrec
 
 
-
 class Sidebar(Application):
 	def __init__(self, master=None, canvas=None):
 		self.master = master
 		self.canvas = canvas
 		self.sidebar = None
-	
-		self.canvas.pencilButtonClicked = False
 
 		self.sidebarObj()
 		self.color_change()
@@ -483,8 +448,7 @@ class Sidebar(Application):
 		self.pencil.pack(side="left", anchor="nw")
 		self.pencil.configure(height=15, width=5)
 
-		global buttons_list
-		buttons_list["pencil"] = self.pencil
+		self.add_button_to_list(self.pencil, "pencil")
 		
 	def rectangle(self):
 
@@ -495,8 +459,7 @@ class Sidebar(Application):
 								compound="center", text="\u25A0", fg="black")
 		self.rectangle.pack(side="left", anchor="nw")
 		self.rectangle.configure(height=15, width=5)
-		global buttons_list
-		buttons_list["rectangle"] = self.rectangle
+		self.add_button_to_list(self.rectangle, "rectangle")
 
 	def rectangle_frame(self):
 
@@ -509,8 +472,7 @@ class Sidebar(Application):
 		self.rectangle_frame.pack(side="left", anchor="nw")
 		self.rectangle_frame.configure(height=15, width=5)
 
-		global buttons_list
-		buttons_list["rectangle_frame"] = self.rectangle_frame
+		self.add_button_to_list(self.rectangle_frame, "rectangle_frame")
 
 	def oval(self):
 		# unicode filled circle
@@ -522,8 +484,7 @@ class Sidebar(Application):
 
 		self.oval.pack(side="left", anchor="nw")
 		self.oval.configure(height=15, width=5)
-		global buttons_list
-		buttons_list["oval"] = self.oval
+		self.add_button_to_list(self.oval, "oval")
 
 	def ovalFilled(self):
 		#\u25CF unicode filled circle
@@ -536,8 +497,7 @@ class Sidebar(Application):
 		self.ovalFilled.pack(side="left", anchor="nw")
 		self.ovalFilled.configure(height=15, width=5)
 		
-		global buttons_list
-		buttons_list["ovalFilled"] = self.ovalFilled
+		self.add_button_to_list(self.ovalFilled, "ovalFilled")
 
 	def color_picker_button(self):
 		self.color_picker_icon = tk.PhotoImage(width=1, height=1)
@@ -548,9 +508,8 @@ class Sidebar(Application):
 		
 		self.color_picker.pack(side="left", anchor="nw")
 		self.color_picker.configure(height=15, width=5)
-		
-		global buttons_list
-		buttons_list["color_picker"] = self.color_picker
+
+		self.add_button_to_list(self.color_picker, "color_picker")
 
 	def color_changer(self):
 
@@ -558,18 +517,21 @@ class Sidebar(Application):
 								color=self.canvas.lineColor)[-1:][0]
 		self.master.button1.configure(bg = self.canvas.lineColor)
 
-	
+	def add_button_to_list(self, button, name):
+		global buttons_list, draw_Item_list
+		buttons_list[name] = button
+		if name not in draw_Item_list:
+			draw_Item_list.append(name)
+
 	def set_config_buttons(self):
 		global buttons_list, draw_Item
 					
 		for elem in buttons_list:
-			# buttons_list[elem].configure(bg="#00ff00")
 			if draw_Item == elem:
 				buttons_list[elem].configure(bg="#f9ffbd")
 				buttons_list[elem].configure(fg="red")
 			else:
-				buttons_list[elem].configure(bg="white")
-				buttons_list[elem].configure(fg="black")
+				self.set_unclicked(elem)
 
 	def set_unclicked(self, Id):
 		global buttons_list
@@ -582,14 +544,11 @@ class Sidebar(Application):
 		if draw_Item == draw_Item_list[0]:
 			draw_Item = None
 			self.set_unclicked(draw_Item_list[0])
-			
-
 		else:
 			draw_Item = draw_Item_list[0]
 			self.set_config_buttons()
 
 	def set_rectangle(self):
-		
 		global draw_Item, draw_Item_list
 		if draw_Item == draw_Item_list[1]:
 			draw_Item = None
@@ -609,7 +568,6 @@ class Sidebar(Application):
 			draw_Item = draw_Item_list[2]
 			self.set_config_buttons()
 
-
 	def set_oval(self):
 		global draw_Item, draw_Item_list		
 		if draw_Item == draw_Item_list[3]:
@@ -628,8 +586,6 @@ class Sidebar(Application):
 			draw_Item = draw_Item_list[4]
 			self.set_config_buttons()
 
-		
-
 	def set_color_picker(self):
 		global draw_Item, draw_Item_list
 		if draw_Item == draw_Item_list[5]:
@@ -639,7 +595,6 @@ class Sidebar(Application):
 			draw_Item = draw_Item_list[5]
 			self.set_config_buttons()
 
-	
 
 def show_help():
 	print("""./imageEditor.py
@@ -647,8 +602,6 @@ def show_help():
 			  ./imageEditor.py {path to file} (file will be replaced) if no image, will be created
 
 		""")
-
-		
 
 if "-h" in sys.argv or "--help" in sys.argv:
 	show_help()
