@@ -8,22 +8,25 @@ import os, sys, io
 import pyautogui
 from math import sqrt
 
+draw_Item_list = ["pencil", "rectangle", "rectangle_frame", 
+				"oval", "ovalFilled", "color_picker"]
+draw_Item = 0
+buttons_list = dict()
+
 class Application(tk.Frame):
 	def __init__(self, image, master=None ):
 		super().__init__(master)
 		self.master = master
 		self.imagePath = image
 		self.resize = True
+		self.VAR = "lol"
 
-
-	
 		self.canvas_config()
 		self.master.width = self.width
 		self.master.height = self.height
 
 		sidebar = Sidebar(self.master, self.canvas)
 		self.keybinds()
-
 
 	def canvas_config(self):
 		self.convert_image(img)
@@ -126,26 +129,37 @@ class Application(tk.Frame):
 	def key_pressed(self, event):
 		x, y = event.x, event.y 
 		print(f"SHIFT: {self.master.shift}")
-		if self.master.pencilColor == "red":
+		global draw_Item, draw_Item_list
+			
+		print(draw_Item)
+		print(draw_Item)
+		print(draw_Item)
+
+		# if self.master.pencilColor == "red":
+		if draw_Item == draw_Item_list[0]:
+
 			Draw(self.master, self.canvas).line( x, y)
 
-		elif self.master.rectangleColor == "red":
+		elif draw_Item == draw_Item_list[1]:
 			Draw(self.master, self.canvas).rectangle( x, y)
 		
-		elif self.master.rectangle_frameColor == "red":
+		elif draw_Item == draw_Item_list[2]:
 			Draw(self.master, self.canvas).rectangle_frame( x, y)
 
-		elif self.master.ovalColor == "red":
+		elif draw_Item == draw_Item_list[3]:
 			Draw(self.master, self.canvas).oval( x, y)
 
-		elif self.master.ovalFilledColor == "red":
+		elif draw_Item == draw_Item_list[4]:
 			Draw(self.master, self.canvas,self.imagePath).ovalFilled(x, y)
-			
-		elif self.master.color_picker == "red":
+	
+		elif draw_Item == draw_Item_list[5]:
 			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
+
 			self.master.button1.configure(bg = self.canvas.lineColor)
 
+
 	def key_pressed_Shift(self, event):
+		global draw_Item, draw_Item_list
 		self.master.shift = True
 		x, y = event.x, event.y 
 		if self.master.pencilColor == "red":
@@ -165,8 +179,8 @@ class Application(tk.Frame):
 			
 		elif self.master.color_picker == "red":
 			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
+			# self.master.button1.configure(bg = self.canvas.lineColor)
 			self.master.button1.configure(bg = self.canvas.lineColor)
-
 		
 
 	
@@ -225,8 +239,9 @@ class Application(tk.Frame):
 		self.canvas.lineWidthLabel.set(self.canvas.lineWidth)
 
 
-class Draw():
+class Draw(Application):
 	def __init__(self, master=None, canvas=None, imagePath=None):
+
 		self.master = master
 		self.canvas = canvas
 		self.imagePath = imagePath
@@ -311,9 +326,11 @@ class Draw():
 
 
 	def motion(self, event):
-		
+		global draw_Item, draw_Item_list
 		#draw line
-		if self.canvas.keyDraw and self.master.pencilColor == "red" :
+
+		# if self.canvas.keyDraw and self.master.pencilColor == "red" :
+		if self.canvas.keyDraw and draw_Item == draw_Item_list[0]:
 			
 			x, y = event.x, event.y
 
@@ -324,7 +341,8 @@ class Draw():
 			self.canvas.lastMoves.append(self.master.line)
 
 		#draw filled rectangle		
-		elif self.canvas.keyDraw and self.master.rectangleColor == "red":
+		# elif self.canvas.keyDraw and self.master.rectangleColor == "red":
+		elif self.canvas.keyDraw and draw_Item == draw_Item_list[1]:
 			self.canvas.delete(self.master.rect)
 			if self.master.xrec ==  None:
 				self.master.xrec =  event.x
@@ -351,7 +369,7 @@ class Draw():
 			self.canvas.lastMoves.append(self.master.rect)
 
 		#draw unfilled rectangle
-		elif self.canvas.keyDraw and self.master.rectangle_frameColor == "red":
+		elif self.canvas.keyDraw and draw_Item == draw_Item_list[2]:
 			
 			self.canvas.delete(self.master.rect)
 			if self.master.xrec ==  None:
@@ -381,7 +399,7 @@ class Draw():
 			self.canvas.lastMoves.append(self.master.rect)
 
 		#draw oval
-		elif self.canvas.keyDraw and self.master.ovalColor == "red":
+		elif self.canvas.keyDraw and draw_Item == draw_Item_list[3]:
 			try:
 				self.canvas.delete(self.master.oval)
 			except:
@@ -414,7 +432,7 @@ class Draw():
 			self.canvas.lastMoves.append(self.master.oval)
 		
 		#draw filled oval
-		elif self.canvas.keyDraw and self.master.ovalFilledColor == "red":
+		elif self.canvas.keyDraw and draw_Item == draw_Item_list[4]:
 			try:
 				self.canvas.delete(self.master.ovalFilled)
 			except:
@@ -448,7 +466,7 @@ class Draw():
 			self.canvas.lastMoves.append(self.master.ovalFilled)
 
 
-class Sidebar():
+class Sidebar(Application):
 	def __init__(self, master=None, canvas=None):
 		self.master = master
 		self.canvas = canvas
@@ -506,6 +524,10 @@ class Sidebar():
 		self.pencil.pack(side="left", anchor="nw")
 		self.pencil.configure(height=15, width=5)
 
+		global buttons_list
+		buttons_list["pencil"] = self.pencil
+		
+
 	def rectangle(self):
 
 		self.rectangle_icon = tk.PhotoImage(width=1, height=1)
@@ -515,6 +537,8 @@ class Sidebar():
 								compound="center", text="\u25A0", fg="black")
 		self.rectangle.pack(side="left", anchor="nw")
 		self.rectangle.configure(height=15, width=5)
+		global buttons_list
+		buttons_list["rectangle"] = self.rectangle
 
 	def rectangle_frame(self):
 
@@ -527,6 +551,10 @@ class Sidebar():
 		self.rectangle_frame.pack(side="left", anchor="nw")
 		self.rectangle_frame.configure(height=15, width=5)
 
+		global buttons_list
+		buttons_list["rectangle_frame"] = self.rectangle_frame
+
+
 	def oval(self):
 		# unicode filled circle
 		self.oval_icon = tk.PhotoImage(width=1, height=1)
@@ -537,6 +565,8 @@ class Sidebar():
 
 		self.oval.pack(side="left", anchor="nw")
 		self.oval.configure(height=15, width=5)
+		global buttons_list
+		buttons_list["oval"] = self.oval
 
 	def ovalFilled(self):
 		#\u25CF unicode filled circle
@@ -548,6 +578,9 @@ class Sidebar():
 
 		self.ovalFilled.pack(side="left", anchor="nw")
 		self.ovalFilled.configure(height=15, width=5)
+		
+		global buttons_list
+		buttons_list["ovalFilled"] = self.ovalFilled
 
 	def color_picker_button(self):
 		self.color_picker_icon = tk.PhotoImage(width=1, height=1)
@@ -558,6 +591,9 @@ class Sidebar():
 		
 		self.color_picker.pack(side="left", anchor="nw")
 		self.color_picker.configure(height=15, width=5)
+		
+		global buttons_list
+		buttons_list["color_picker"] = self.color_picker
 
 	def color_changer(self):
 
@@ -568,52 +604,59 @@ class Sidebar():
 	
 	def set_config_buttons(self, pencil=None, rectangle=None,
 		rectangle_frame=None, color_picker=None, oval=None, ovalFilled=None):
+		global buttons_list, draw_Item
+		print(f"drwa item: {draw_Item}")
 
-		if rectangle_frame == None:
-			self.rectangle_frame.configure(bg="white")
-			self.rectangle_frame.configure(fg="black")
-		else:
-			self.rectangle_frame.configure(bg="#f9ffbd")
-			self.rectangle_frame.configure(fg="red")
-				
+		self.rectangle_frame.configure(bg="#f9ffbd")
+		self.rectangle_frame.configure(fg="red")	
+		self.pencil.configure(bg="#f9ffbd")
+		self.pencil.configure(fg="red")
+		self.rectangle.configure(bg="#f9ffbd")
+		self.rectangle.configure(fg="red")
+		self.color_picker.configure(bg="#f9ffbd")
+		self.color_picker.configure(fg="red")
+		self.oval.configure(bg="#f9ffbd")
+		self.oval.configure(fg="red")
+		self.ovalFilled.configure(bg="#f9ffbd")
+		self.ovalFilled.configure(fg="red")
 
-		if pencil == None:
-			self.pencil.configure(bg="white")
-			self.pencil.configure(fg="black")
-		else:
-			self.pencil.configure(bg="#f9ffbd")
-			self.pencil.configure(fg="red")
+		# if rectangle_frame == None:
+		# 	self.rectangle_frame.configure(bg="white")
+		# 	self.rectangle_frame.configure(fg="black")
 
+		# if pencil == None:
+		# 	self.pencil.configure(bg="white")
+		# 	self.pencil.configure(fg="black")
 
-		if rectangle == None:
-			self.rectangle.configure(bg="white")
-			self.rectangle.configure(fg="black")
-		else:
-			self.rectangle.configure(bg="#f9ffbd")
-			self.rectangle.configure(fg="red")
+		# if rectangle == None:
+		# 	self.rectangle.configure(bg="white")
+		# 	self.rectangle.configure(fg="black")
 
+		# if color_picker == None:
+		# 	self.color_picker.configure(bg="white")
+		# 	self.color_picker.configure(fg="black")
 
-		if color_picker == None:
-			self.color_picker.configure(bg="white")
-			self.color_picker.configure(fg="black")
-		else:
-			self.color_picker.configure(bg="#f9ffbd")
-			self.color_picker.configure(fg="red")
+		# if oval == None:
+		# 	self.oval.configure(bg="white")
+		# 	self.oval.configure(fg="black")
 
+		# if ovalFilled == None:
+		# 	self.ovalFilled.configure(bg="white")
+		# 	self.ovalFilled.configure(fg="black")
 
-		if oval == None:
-			self.oval.configure(bg="white")
-			self.oval.configure(fg="black")
-		else:
-			self.oval.configure(bg="#f9ffbd")
-			self.oval.configure(fg="red")
+			
 
-		if ovalFilled == None:
-			self.ovalFilled.configure(bg="white")
-			self.ovalFilled.configure(fg="black")
-		else:
-			self.ovalFilled.configure(bg="#f9ffbd")
-			self.ovalFilled.configure(fg="red")
+		print("DICT")
+		for elem in buttons_list:
+			print(f"{elem} : {buttons_list[elem]}" )
+			buttons_list[elem].configure(bg="#00ff00")
+			if draw_Item == elem:
+				buttons_list[elem].configure(bg="#f9ffbd")
+				buttons_list[elem].configure(fg="red")
+			else:
+				buttons_list[elem].configure(bg="white")
+				buttons_list[elem].configure(fg="black")
+
 
 
 		self.master.pencilColor = self.pencil["fg"]
@@ -622,36 +665,101 @@ class Sidebar():
 		self.master.color_picker = self.color_picker["fg"]
 		self.master.ovalColor = self.oval["fg"]
 		self.master.ovalFilledColor = self.ovalFilled["fg"]
+		print("")
 
+
+			
 	def set_pencil(self):
+		global draw_Item, draw_Item_list
 		
-		if self.pencil["fg"] == "black":		
-			self.set_config_buttons(pencil=True)
+		if draw_Item == draw_Item_list[0]:
+			draw_Item = None
+		else:
+			draw_Item = draw_Item_list[0]
+			self.set_config_buttons()
+
+
+		print(f"draw item {draw_Item}")
+		print("PENCIL SET")
+		print("PENCIL SET")
+
+		# if self.pencil["fg"] == "black":		
+		# 	
+		# 	self.master.rectangleColor
+			
 
 	def set_rectangle(self):
 		
-		if self.rectangle["fg"] == "black":		
-			self.set_config_buttons(rectangle=True)
+		global draw_Item, draw_Item_list
+		if draw_Item == draw_Item_list[1]:
+			draw_Item = None
+		else:
+			draw_Item = draw_Item_list[1]
+			self.set_config_buttons()
+
+		# if self.rectangle["fg"] == "black":		
+		# 	self.set_config_buttons()
+		# 	global draw_Item, draw_Item_list
+		# 	draw_Item = draw_Item_list[1]
+
+		print("rectangle SET")
+		print("rectangle SET")
 	
 	def set_rectangle_frame(self):
 
-		if self.rectangle_frame["fg"] == "black":		
-			self.set_config_buttons(rectangle_frame=True)
+		global draw_Item, draw_Item_list
+		if draw_Item == draw_Item_list[2]:
+			draw_Item = None
+		else:
+			draw_Item = draw_Item_list[2]
+			self.set_config_buttons()
+
+		# if self.rectangle_frame["fg"] == "black":		
+		# 	self.set_config_buttons()
+		# 	global draw_Item, draw_Item_list
+		# 	draw_Item = draw_Item_list[2]
+
+		print("rectangle_frame SET")
 
 
 	def set_oval(self):
-		if self.oval["fg"] == "black":		
-			self.set_config_buttons(oval=True)
+		global draw_Item, draw_Item_list		
+		if draw_Item == draw_Item_list[3]:
+			draw_Item = None
+		else:
+			draw_Item = draw_Item_list[3]
+			self.set_config_buttons()
+		# if self.oval["fg"] == "black":		
+		# 	self.set_config_buttons()
+		# 	global draw_Item, draw_Item_list
+		# 	draw_Item = draw_Item_list[3]
 
 	def set_oval_filled(self):
-		if self.ovalFilled["fg"] == "black":		
-			self.set_config_buttons(ovalFilled=True)
+		global draw_Item, draw_Item_list
+		if draw_Item == draw_Item_list[4]:
+			draw_Item = None
+		else:
+			draw_Item = draw_Item_list[4]
+			self.set_config_buttons()
 
+		# if self.ovalFilled["fg"] == "black":		
+		# 	self.set_config_buttons()
+		# 	print("OVAL FILLED")
+		# 	global draw_Item, draw_Item_list
+		# 	draw_Item = draw_Item_list[4]
 
 	def set_color_picker(self):
-		if self.color_picker["fg"] == "black":		
-			self.set_config_buttons(color_picker=True)			
+		global draw_Item, draw_Item_list
+		if draw_Item == draw_Item_list[5]:
+			draw_Item = None
+		else:
+			draw_Item = draw_Item_list[5]
+			self.set_config_buttons()
 
+		# if self.color_picker["fg"] == "black":		
+		# 	self.set_config_buttons()			
+		# 	global draw_Item, draw_Item_list
+		# 	draw_Item = draw_Item_list[5]
 
 def show_help():
 	print("""./imageEditor.py
