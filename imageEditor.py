@@ -12,6 +12,7 @@ from math import sqrt
 draw_Item_list = list()
 draw_Item = 0
 buttons_list = dict()
+maxLineWidth = 50
 
 class Application(tk.Frame):
 	def __init__(self, image, master=None ):
@@ -197,9 +198,10 @@ class Application(tk.Frame):
 		self.master.destroy()
 
 	def bigger_brush(self, event):
+		global maxLineWidth
 		self.canvas.lineWidth = self.canvas.lineWidth + 1
-		if self.canvas.lineWidth > 15:
-			self.canvas.lineWidth = 15
+		if self.canvas.lineWidth > maxLineWidth:
+			self.canvas.lineWidth = maxLineWidth
 		self.canvas.lineWidthLabel.set(self.canvas.lineWidth)
 
 	def smaller_brush(self, event):
