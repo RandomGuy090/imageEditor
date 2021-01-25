@@ -294,13 +294,16 @@ class Draw(Application):
 
 	def motion(self, event):
 		global draw_Item, draw_Item_list
+		
 		#draw line
 		if self.canvas.keyDraw and draw_Item == draw_Item_list[0]:
 			
 			x, y = event.x, event.y
 
-			self.master.line = self.canvas.create_line(self.x, self.y,x, y,  \
-					fill=self.canvas.lineColor, width=self.canvas.lineWidth)
+			self.master.line = self.canvas.create_oval(x,y,\
+				x+self.canvas.lineWidth, y+self.canvas.lineWidth,\
+				 outline=self.canvas.lineColor,width=self.canvas.lineWidth, 
+				 fill=self.canvas.lineColor)
 
 			self.x ,self.y = x, y
 			self.canvas.lastMoves.append(self.master.line)
