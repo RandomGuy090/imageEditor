@@ -20,11 +20,11 @@ class Application(tk.Frame):
 		self.master = master
 		self.imagePath = image
 		self.resize = True
-		self.VAR = "lol"
 
 		self.canvas_config()
 		self.master.width = self.width
 		self.master.height = self.height
+
 		sidebar = Sidebar(self.master, self.canvas)
 		self.keybinds()
 
@@ -49,8 +49,11 @@ class Application(tk.Frame):
 
 		
 	def window_config(self):
-		self.master.geometry(f"{self.width}x{self.height+22}")
+		global sidebarHeight
+		self.master.geometry(f"{self.width}x{self.height+sidebarHeight}")
 		self.master.title("imageEditor")
+
+
 		
 
 	def keybinds(self):
@@ -81,9 +84,10 @@ class Application(tk.Frame):
 		self.master.bind('<Configure>', self.resizeWindow)
 
 	def resizeWindow(self, event):
+		global sidebarHeight
 		self.width = self.master.winfo_width() 
 		self.height = self.master.winfo_height()-22
-		self.canvas.config(width=self.width, height=self.height)
+		self.canvas.config(width=self.width, height=self.height-sidebarHeight)
 
 	def convert_image(self, img):
 		try:
@@ -399,9 +403,18 @@ class Draw(Application):
 
 class Sidebar(Application):
 	def __init__(self, master=None, canvas=None):
+
 		self.master = master
 		self.canvas = canvas
 		self.sidebar = None
+		# self.buttonHeight =  master.winfo_screenwidth()
+		# self.buttonWidth =  master.winfo_screenheight()
+		global sidebarHeight, sidebarWidth
+		self.buttonHeight =  sidebarHeight
+		self.buttonWidth =  sidebarWidth
+
+		print(self.buttonHeight);
+		print(self.buttonWidth);
 
 		self.sidebarObj()
 		self.color_change()
@@ -413,35 +426,40 @@ class Sidebar(Application):
 		self.ovalFilled()
 		self.color_picker_button()
 
+		self.sidebar.configure(height=sidebarHeight);
+
+	def sidebarObj(self):
+		self.sidebar = tk.Frame(bd=0, bg='white', 
+					height=100,  borderwidth=1, highlightcolor="blue",  
+					highlightbackground="yellow", cursor="arrow", relief="raised")
+		self.sidebar.pack(expand=False, fill='both', padx=0, pady=0)
+
+
 	def brush_size(self):
 		self.canvas.lineWidthLabel = tk.StringVar()
 
-		self.brush_size_label = tk.Label(self.sidebar, width=3, height=1,
+		self.brush_size_label = tk.Label(self.sidebar, width=3,
 					bg="white", relief="sunken")
 		
 		self.canvas.lineWidthLabel.set("1")
 		self.brush_size_label["textvariable"] = self.canvas.lineWidthLabel
+		# self.brush_size_label.config(height=int((self.buttonHeight*9)/100))
+
 		self.brush_size_label.pack(side="right", anchor="ne")
 
-	def sidebarObj(self):
-		self.sidebar = tk.Frame(self.master, width=self.master.width,bd=0, bg='white', 
-					height=30,  borderwidth=0, highlightcolor="blue",  
-					highlightbackground="yellow", cursor="arrow", relief="raised")
-
-		self.sidebar.pack(expand=False, fill='both', side='bottom', anchor='s', padx=0, pady=0)
 
 	def color_change(self):
 		self.icon = tk.PhotoImage(width=1, height=1)
 
 
-		self.master.button1 = tk.Button(self.sidebar, width=1, heigh=1.2, bg=self.canvas.lineColor,
+		self.master.button1 = tk.Button(self.sidebar, bg=self.canvas.lineColor,
 								image = self.icon, highlightcolor="green",  
 								cursor="arrow", command=self.color_changer,
 								compound="left", relief="sunken")
 		
 		self.master.button1.pack(expand=False, side="left", anchor="nw")
 
-		self.master.button1.configure(height=22, width=20)
+		self.master.button1.configure(height=self.buttonHeight, width=self.buttonWidth)
 
 	def pencil(self):
 
@@ -451,7 +469,7 @@ class Sidebar(Application):
 								cursor="arrow", command=self.set_pencil,
 								compound="center", text="\u270E", fg="black")
 		self.pencil.pack(side="left", anchor="nw")
-		self.pencil.configure(height=15, width=5)
+		self.pencil.configure(height=self.buttonHeight, width=self.buttonWidth)
 
 		self.add_button_to_list(self.pencil, "pencil")
 		
@@ -462,8 +480,9 @@ class Sidebar(Application):
 								image = self.rectangle_icon, highlightcolor="green",  
 								cursor="arrow", command=self.set_rectangle,
 								compound="center", text="\u25A0", fg="black")
+
 		self.rectangle.pack(side="left", anchor="nw")
-		self.rectangle.configure(height=15, width=5)
+		self.rectangle.configure(height=self.buttonHeight, width=self.buttonWidth)
 		self.add_button_to_list(self.rectangle, "rectangle")
 
 	def rectangle_frame(self):
@@ -475,8 +494,7 @@ class Sidebar(Application):
 								compound="center", text="\u25A1", fg="black",)
 
 		self.rectangle_frame.pack(side="left", anchor="nw")
-		self.rectangle_frame.configure(height=15, width=5)
-
+		self.rectangle_frame.configure(height=self.buttonHeight, width=self.buttonWidth)
 		self.add_button_to_list(self.rectangle_frame, "rectangle_frame")
 
 	def oval(self):
@@ -488,7 +506,7 @@ class Sidebar(Application):
 								compound="center", text="\u25CB", fg="black",)
 
 		self.oval.pack(side="left", anchor="nw")
-		self.oval.configure(height=15, width=5)
+		self.oval.configure(height=self.buttonHeight, width=self.buttonWidth)
 		self.add_button_to_list(self.oval, "oval")
 
 	def ovalFilled(self):
@@ -500,7 +518,7 @@ class Sidebar(Application):
 								compound="center", text="\u25CF", fg="black",)
 
 		self.ovalFilled.pack(side="left", anchor="nw")
-		self.ovalFilled.configure(height=15, width=5)
+		self.ovalFilled.configure(height=self.buttonHeight, width=self.buttonWidth)
 		
 		self.add_button_to_list(self.ovalFilled, "ovalFilled")
 
@@ -512,7 +530,7 @@ class Sidebar(Application):
 								compound="center", text="c", fg="black")
 		
 		self.color_picker.pack(side="left", anchor="nw")
-		self.color_picker.configure(height=15, width=5)
+		self.color_picker.configure(height=self.buttonHeight, width=self.buttonWidth)
 
 		self.add_button_to_list(self.color_picker, "color_picker")
 
@@ -521,6 +539,7 @@ class Sidebar(Application):
 		self.canvas.lineColor = colorchooser.askcolor(title ="Choose color",
 								color=self.canvas.lineColor)[-1:][0]
 		self.master.button1.configure(bg = self.canvas.lineColor)
+		self.master.button1.configure(height=self.buttonHeight, width=self.buttonWidth)
 
 	def add_button_to_list(self, button, name):
 		global buttons_list, draw_Item_list
@@ -629,7 +648,8 @@ root = tk.Tk()
 # root.resizable(False, False)
 pencilDraw = None
 #root.eval('tk::PlaceWindow . center')
-
+sidebarHeight = int((root.winfo_screenheight() *2) / 100)
+sidebarWidth = int((root.winfo_screenwidth() *3) / 100)
 app = Application(img, master=root)
 app.imgSave = imgSave
 
