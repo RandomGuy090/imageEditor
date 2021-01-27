@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import colorchooser
 import os, sys, io
-import pyautogui
+import screeninfo
 from math import sqrt
 
 
@@ -94,8 +94,9 @@ class Application(tk.Frame):
 			self.bgImage = ImageTk.PhotoImage(Image.open(img), master=self.master)
 			self.get_sizes()
 		except:
-			self.height = 300
-			self.width = 450
+			global sidebarHeight, sidebarWidth
+			self.height = int((screeninfo.get_monitors()[0].height *50) / 100)
+			self.width = int((screeninfo.get_monitors()[0].width *40) / 100)
 
 		self.set_bg_image()
 		self.window_config()
@@ -648,8 +649,10 @@ root = tk.Tk()
 # root.resizable(False, False)
 pencilDraw = None
 #root.eval('tk::PlaceWindow . center')
-sidebarHeight = int((root.winfo_screenheight() *2) / 100)
-sidebarWidth = int((root.winfo_screenwidth() *3) / 100)
+sidebarHeight = int((screeninfo.get_monitors()[0].height *2) / 100)
+sidebarWidth = int((screeninfo.get_monitors()[0].width *3) / 100)
+
+
 app = Application(img, master=root)
 app.imgSave = imgSave
 
