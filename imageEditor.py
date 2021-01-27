@@ -306,11 +306,16 @@ class Draw(Application):
 		if self.canvas.keyDraw and draw_Item == draw_Item_list[0]:
 			
 			x, y = event.x, event.y
+			if self.canvas.lineWidth >5:
+				self.master.line = self.canvas.create_oval(x,y,\
+					x+self.canvas.lineWidth-4, y+self.canvas.lineWidth-4,\
+					 outline=self.canvas.lineColor,width=self.canvas.lineWidth-3, 
+					 fill=self.canvas.lineColor)
+			else:
+				self.master.line = self.canvas.create_line(x,y,\
+			
+			self.x, self.y, width=self.canvas.lineWidth, fill=self.canvas.lineColor)
 
-			self.master.line = self.canvas.create_oval(x,y,\
-				x+self.canvas.lineWidth, y+self.canvas.lineWidth,\
-				 outline=self.canvas.lineColor,width=self.canvas.lineWidth, 
-				 fill=self.canvas.lineColor)
 
 			self.x ,self.y = x, y
 			self.canvas.lastMoves.append(self.master.line)
