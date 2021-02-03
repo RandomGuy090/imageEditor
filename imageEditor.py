@@ -100,22 +100,27 @@ class Application(tk.Frame):
 	def CtrlBackspace(self, event):
 		global total_text
 		self.canvas.delete(text_object)
-		print(total_text)
+
 		try:
-			total_text = total_text[:-(total_text[::-1].index(" ")+1)]
-		except:
-			pass
+			for elem in total_text[::-1]:
+				if elem == " ":
+					total_text = total_text[:-1]
+				else:
+					break
 			
-		print(total_text)
+			total_text = total_text[:-(total_text[::-1].index(" ")+1)]
 
-		Draw(self.master, self.canvas).input_text(text_font, 100, 100)
+		except:
+			total_text = ""
 
+
+		Draw(self.master, self.canvas).input_text(text_font)
 
 	def Backspace(self, event):
 		global total_text
 		self.canvas.delete(text_object)
 		total_text = total_text[:-1]
-		Draw(self.master, self.canvas).input_text(text_font, 100, 100)
+		Draw(self.master, self.canvas).input_text(text_font)
 
 	def Enter(self, event):
 		self.master.input_text = True
@@ -136,7 +141,7 @@ class Application(tk.Frame):
 		
 		if self.master.input_text:
 			total_text += event.char	
-			Draw(self.master, self.canvas).input_text(text_font, 100, 100)
+			Draw(self.master, self.canvas).input_text(text_font)
 
 	def resizeWindow(self, event):
 		global sidebarHeight
@@ -473,7 +478,7 @@ class Draw(Application):
 			text_font = self.master.yrec - y
 			textBoxFrame = self.master.textbox
 
-	def input_text(self, font, x, y):
+	def input_text(self, font):
 
 		
 		global text_object, input_text, \
