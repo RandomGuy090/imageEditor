@@ -8,11 +8,16 @@ import os, sys, io
 import screeninfo
 from math import sqrt
 
-
 draw_Item_list = list()
 draw_Item = 0
+text_object = None
+input_text = False
+total_text = " "
+textBoxFrame = None
 buttons_list = dict()
 maxLineWidth = 50
+coords = (0,0)
+last_coords = (0,0)
 
 class Application(tk.Frame):
 	def __init__(self, image, master=None ):
@@ -33,7 +38,7 @@ class Application(tk.Frame):
 		self.window_config()
 
 		self.canvas.keyOverlay = False
-		self.canvas.lineWidth = 1
+		self.canvas.lineWidth = 10
 		self.canvas.lineColor = "#ff0000"
 		self.canvas.lastMoves = list()
 		self.canvas.undoList = []
@@ -41,20 +46,22 @@ class Application(tk.Frame):
 		
 		self.master.button1 = None
 		self.master.shift = False
+		self.master.input_text = None
+
 
 		self.master.xrec =  None
 		self.master.yrec =  None
+
 		self.master.rect = None
 		self.master.line = None
+		self.master.text = None
+
 
 		
 	def window_config(self):
 		global sidebarHeight
-		self.master.geometry(f"{self.width}x{self.height+sidebarHeight}")
+		self.master.geometry(f"{self.width}x{self.height+sidebarHeight+sidebarHeight}")
 		self.master.title("imageEditor")
-
-
-		
 
 	def keybinds(self):
 		#when mouse button pressed		
@@ -83,11 +90,59 @@ class Application(tk.Frame):
 		#when window size changes
 		self.master.bind('<Configure>', self.resizeWindow)
 
+		#when every key else has been pressed
+		self.master.bind("<Key>",self.text_inp_keys)
+		self.master.bind("<space>",self.text_inp_keys)
+		self.master.bind("<Return>",self.Enter)
+		self.master.bind("<BackSpace>",self.Backspace)
+		self.master.bind("<Control-BackSpace>",self.CtrlBackspace)
+
+	def CtrlBackspace(self, event):
+		global total_text
+		self.canvas.delete(text_object)
+		print(total_text)
+		try:
+			total_text = total_text[:-(total_text[::-1].index(" ")+1)]
+		except:
+			pass
+			
+		print(total_text)
+
+		Draw(self.master, self.canvas).input_text(text_font, 100, 100)
+
+
+	def Backspace(self, event):
+		global total_text
+		self.canvas.delete(text_object)
+		total_text = total_text[:-1]
+		Draw(self.master, self.canvas).input_text(text_font, 100, 100)
+
+	def Enter(self, event):
+		self.master.input_text = True
+		global text_font, total_text, text_object
+		text_font = 0
+		total_text = ""
+		self.canvas.delete(textBoxFrame)
+		
+		tmp = []
+		tmp.append(text_object)
+		self.canvas.undoList.append(tmp)
+		
+		text_object = None
+
+	def text_inp_keys(self, event):
+		
+		global text_font, total_text
+		
+		if self.master.input_text:
+			total_text += event.char	
+			Draw(self.master, self.canvas).input_text(text_font, 100, 100)
+
 	def resizeWindow(self, event):
 		global sidebarHeight
 		self.width = self.master.winfo_width() 
-		self.height = self.master.winfo_height()-22
-		self.canvas.config(width=self.width, height=self.height-sidebarHeight)
+		self.height = self.master.winfo_height()-sidebarHeight*2
+		self.canvas.config(width=self.width, height=self.height)
 
 	def convert_image(self, img):
 		try:
@@ -137,8 +192,12 @@ class Application(tk.Frame):
 			Draw(self.master, self.canvas,self.imagePath).ovalFilled(x, y)
 	
 		elif draw_Item == draw_Item_list[5]:
-			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
+			Draw(self.master, self.canvas,self.imagePath).get_pixel_val(x, y)
 			self.master.button1.configure(bg = self.canvas.lineColor)
+
+		elif draw_Item == draw_Item_list[6]:
+			Draw(self.master, self.canvas,self.imagePath).text( x, y)
+
 
 
 	def key_pressed_Shift(self, event):
@@ -164,7 +223,6 @@ class Application(tk.Frame):
 			Draw(self.master, self.canvas,self.imagePath).get_pixel_val( x, y)
 			self.master.button1.configure(bg = self.canvas.lineColor)
 		
-
 	
 	def key_released(self, event):
 
@@ -219,11 +277,10 @@ class Application(tk.Frame):
 
 class Draw(Application):
 	def __init__(self, master=None, canvas=None, imagePath=None):
-
 		self.master = master
 		self.canvas = canvas
 		self.imagePath = imagePath
-		
+
 
 	def line(self, x, y):
 		self.y = y
@@ -263,6 +320,13 @@ class Draw(Application):
 		self.canvas.keyDraw = True
 		self.master.bind('<Motion>', self.motion)
 
+	def text(self, x, y):
+		
+		self.y = y
+		self.x = x
+		self.canvas.keyDraw = True
+		self.master.bind('<Motion>', self.motion)
+
 	def get_pixel_val(self, x, y):
 		try:
 			im = Image.open(self.imagePath).convert('RGB')	
@@ -281,6 +345,8 @@ class Draw(Application):
 	def key_released(self):
 		self.canvas.keyDraw = False
 		self.master.shift = False
+		global input_text
+		# self.master.input_text = False
 
 		self.master.rect = None
 		self.master.oval = None
@@ -290,6 +356,8 @@ class Draw(Application):
 
 		self.canvas.undoList.append(list(self.canvas.lastMoves))
 		self.canvas.lastMoves = []
+		# global textBoxFrame
+		# 
 	
 	def undo(self):
 		try:
@@ -383,6 +451,59 @@ class Draw(Application):
 
 			self.x ,self.y = x, y
 			self.canvas.lastMoves.append(self.master.ovalFilled)
+		
+		# draw textbox
+		elif self.canvas.keyDraw and draw_Item == draw_Item_list[6]:
+			try:
+				self.canvas.delete(self.master.textbox)
+			except:
+				pass
+
+			self.master.xrec, self.master.yrec = self.set_xrec(event.x, event.y)
+			x, y = self.make_shifted(event.x, event.y)   
+		
+			self.master.textbox = self.canvas.create_rectangle(self.master.xrec, \
+				self.master.yrec,x, y, outline=self.canvas.lineColor, 
+				width=2, dash=(10, 10))
+
+			self.master.input_text = True
+			global textBoxFrame, text_font, input_text, coords
+			coords = x, y
+			self.x ,self.y = x, y
+			text_font = self.master.yrec - y
+			textBoxFrame = self.master.textbox
+
+	def input_text(self, font, x, y):
+
+		
+		global text_object, input_text, \
+			textBoxFrame, total_text, coords,\
+			last_coords
+
+		self.canvas.delete(text_object)
+
+		if coords[1] > last_coords[1]:
+			y = coords[1]
+		else:
+			y = last_coords[1]
+
+
+		if coords[0] < last_coords[0]:
+			x = coords[0]
+		else:
+			x = last_coords[0]
+
+		if coords[0] > last_coords[0]:
+			width = coords[0] - last_coords[0]
+		else:
+			width = last_coords[0] - last_coords[0]
+
+		if font <0:
+			font = font*-1
+
+		text_object = self.canvas.create_text(x, y, font=("Purisa", self.canvas.lineWidth),
+			text=total_text, anchor="sw", width=width, fill=self.canvas.lineColor)
+
 
 	def make_shifted(self, x, y):
 		if self.master.shift:
@@ -403,6 +524,8 @@ class Draw(Application):
 		if self.master.xrec == None:
 			xrec = x
 			yrec = y
+			global last_coords
+			last_coords = x,y
 			return xrec, yrec
 		return self.master.xrec, self.master.yrec
 
@@ -419,8 +542,7 @@ class Sidebar(Application):
 		self.buttonHeight =  sidebarHeight
 		self.buttonWidth =  sidebarWidth
 
-		print(self.buttonHeight);
-		print(self.buttonWidth);
+		
 
 		self.sidebarObj()
 		self.color_change()
@@ -431,6 +553,7 @@ class Sidebar(Application):
 		self.oval()
 		self.ovalFilled()
 		self.color_picker_button()
+		self.text()
 
 		self.sidebar.configure(height=sidebarHeight);
 
@@ -444,11 +567,12 @@ class Sidebar(Application):
 	def brush_size(self):
 		self.canvas.lineWidthLabel = tk.StringVar()
 
-		self.brush_size_label = tk.Label(self.sidebar, width=3,
+		self.brush_size_label = tk.Label(self.sidebar, width=5, height=self.buttonHeight,
 					bg="white", relief="sunken")
 		
-		self.canvas.lineWidthLabel.set("1")
+		self.canvas.lineWidthLabel.set(self.canvas.lineWidth)
 		self.brush_size_label["textvariable"] = self.canvas.lineWidthLabel
+		
 		# self.brush_size_label.config(height=int((self.buttonHeight*9)/100))
 
 		self.brush_size_label.pack(side="right", anchor="ne")
@@ -528,6 +652,7 @@ class Sidebar(Application):
 		
 		self.add_button_to_list(self.ovalFilled, "ovalFilled")
 
+	
 	def color_picker_button(self):
 		self.color_picker_icon = tk.PhotoImage(width=1, height=1)
 		self.color_picker = tk.Button(self.sidebar, width=1, heigh=0.8, bg="white",
@@ -539,6 +664,18 @@ class Sidebar(Application):
 		self.color_picker.configure(height=self.buttonHeight, width=self.buttonWidth)
 
 		self.add_button_to_list(self.color_picker, "color_picker")
+
+	def text(self):
+
+		self.text_icon = tk.PhotoImage(width=1, height=1)
+		self.text_frame = tk.Button(self.sidebar, width=1, heigh=0.8, bg="white",
+								image = self.text_icon, highlightcolor="green",  
+								cursor="arrow", command=self.set_text,
+								compound="center", text="T", fg="black",)
+
+		self.text_frame.pack(side="left", anchor="nw")
+		self.text_frame.configure(height=self.buttonHeight, width=self.buttonWidth)
+		self.add_button_to_list(self.text_frame, "text_frame")
 
 	def color_changer(self):
 
@@ -564,9 +701,11 @@ class Sidebar(Application):
 				self.set_unclicked(elem)
 
 	def set_unclicked(self, Id):
-		global buttons_list
+		global buttons_list, textBoxFrame
 		buttons_list[Id].configure(bg="white")
 		buttons_list[Id].configure(fg="black")
+
+		self.canvas.delete(textBoxFrame)
 
 	def set_pencil(self):
 		global draw_Item, draw_Item_list
@@ -616,6 +755,8 @@ class Sidebar(Application):
 			draw_Item = draw_Item_list[4]
 			self.set_config_buttons()
 
+
+
 	def set_color_picker(self):
 		global draw_Item, draw_Item_list
 		if draw_Item == draw_Item_list[5]:
@@ -623,6 +764,17 @@ class Sidebar(Application):
 			self.set_unclicked(draw_Item_list[5])
 		else:
 			draw_Item = draw_Item_list[5]
+			self.set_config_buttons()
+
+	def set_text(self):
+		global draw_Item, draw_Item_list, input_text
+		input_text = True
+		if draw_Item == draw_Item_list[6]:
+			draw_Item = None
+			self.set_unclicked(draw_Item_list[6])
+			
+		else:
+			draw_Item = draw_Item_list[6]
 			self.set_config_buttons()
 
 
@@ -655,7 +807,7 @@ root = tk.Tk()
 pencilDraw = None
 #root.eval('tk::PlaceWindow . center')
 sidebarHeight = int((screeninfo.get_monitors()[0].height *2) / 100)
-sidebarWidth = int((screeninfo.get_monitors()[0].width *3) / 100)
+sidebarWidth = int((screeninfo.get_monitors()[0].width *3) / 150)
 
 
 app = Application(img, master=root)
