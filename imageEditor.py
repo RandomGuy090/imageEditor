@@ -10,14 +10,17 @@ from math import sqrt
 
 draw_Item_list = list()
 draw_Item = 0
+
 text_object = None
+textBoxFrame = None
 input_text = False
 total_text = " "
-textBoxFrame = None
+
 buttons_list = dict()
 maxLineWidth = 50
+
 coords = (0,0)
-last_coords = (0,0)
+last_coords = (None,None)
 
 class Application(tk.Frame):
 	def __init__(self, image, master=None ):
@@ -46,11 +49,11 @@ class Application(tk.Frame):
 		
 		self.master.button1 = None
 		self.master.shift = False
-		self.master.input_text = None
+		self.master.input_text = None\
+		
+		global last_coords
+		self.master.ex_coords = last_coords
 
-
-		self.master.xrec =  None
-		self.master.yrec =  None
 
 		self.master.rect = None
 		self.master.line = None
@@ -128,7 +131,6 @@ class Application(tk.Frame):
 		text_font = 0
 		total_text = ""
 		self.canvas.delete(textBoxFrame)
-		
 		tmp = []
 		tmp.append(text_object)
 		self.canvas.undoList.append(tmp)
@@ -235,7 +237,10 @@ class Application(tk.Frame):
 		Draw(self.master, self.canvas).key_released()
 
 	def save_img(self, event):
-		
+		try:
+			self.canvas.delete(self.master.textbox)
+		except:
+			pass
 		bgImage = ImageTk.PhotoImage(Image.new("RGB", (self.width, self.height), color="#ffffff" ), master=self.master)
 		
 		self.canvas.pack(fill="both", expand="yes")
@@ -250,6 +255,10 @@ class Application(tk.Frame):
 		img.save(self.imgSave, 'png')
 		
 	def save_img_as(self, event=None):
+		try:
+			self.canvas.delete(self.master.textbox)
+		except:
+			pass
 		bgImage = ImageTk.PhotoImage(Image.new("RGB", (self.width, self.height), color="#ffffff" ), master=self.master)
 		self.canvas.pack(fill="both", expand="yes")
 		f = fd.asksaveasfile(mode='w', defaultextension=".png")
@@ -350,14 +359,12 @@ class Draw(Application):
 	def key_released(self):
 		self.canvas.keyDraw = False
 		self.master.shift = False
-		global input_text
-		# self.master.input_text = False
+		global input_text, last_coords
 
 		self.master.rect = None
 		self.master.oval = None
 		self.master.ovalFilled = None
-		self.master.xrec =  None
-		self.master.yrec = None
+		last_coords = (None,None)
 
 		self.canvas.undoList.append(list(self.canvas.lastMoves))
 		self.canvas.lastMoves = []
@@ -373,7 +380,7 @@ class Draw(Application):
 			del self.canvas.undoList[-1:]
 
 	def motion(self, event):
-		global draw_Item, draw_Item_list
+		global draw_Item, draw_Item_list, last_coords
 		
 		#draw line
 		if self.canvas.keyDraw and draw_Item == draw_Item_list[0]:
@@ -397,12 +404,12 @@ class Draw(Application):
 		elif self.canvas.keyDraw and draw_Item == draw_Item_list[1]:
 			self.canvas.delete(self.master.rect)
 			
-			self.master.xrec, self.master.yrec = self.set_xrec(event.x, event.y)
+			last_coords = self.set_xrec(event.x, event.y)
 
 			x, y = self.make_shifted(event.x, event.y)   
 				
-			self.master.rect = self.canvas.create_rectangle(self.master.xrec, \
-				self.master.yrec,x, y, fill=self.canvas.lineColor,\
+			self.master.rect = self.canvas.create_rectangle(last_coords[0], \
+				last_coords[1],x, y, fill=self.canvas.lineColor,\
 				outline=self.canvas.lineColor, width=self.canvas.lineWidth,)
 			self.x ,self.y = x, y
 			self.canvas.lastMoves.append(self.master.rect)
@@ -411,12 +418,12 @@ class Draw(Application):
 		elif self.canvas.keyDraw and draw_Item == draw_Item_list[2]:
 			
 			self.canvas.delete(self.master.rect)
-			self.master.xrec, self.master.yrec = self.set_xrec(event.x, event.y)
+			last_coords = self.set_xrec(event.x, event.y)
 
 			x, y = self.make_shifted(event.x, event.y)   
 
-			self.master.rect = self.canvas.create_rectangle(self.master.xrec, \
-				self.master.yrec,x, y, outline=self.canvas.lineColor, 
+			self.master.rect = self.canvas.create_rectangle(last_coords[0], \
+				last_coords[1],x, y, outline=self.canvas.lineColor, 
 			 	width=self.canvas.lineWidth)
 			self.x ,self.y = x, y
 
@@ -428,11 +435,11 @@ class Draw(Application):
 				self.canvas.delete(self.master.oval)
 			except:
 				pass
-			self.master.xrec, self.master.yrec = self.set_xrec(event.x, event.y)
+			last_coords = self.set_xrec(event.x, event.y)
 			x, y = self.make_shifted(event.x, event.y)   
 						
-			self.master.oval = self.canvas.create_oval(self.master.xrec, \
-				self.master.yrec,x, y, outline=self.canvas.lineColor, 
+			self.master.oval = self.canvas.create_oval(last_coords[0], \
+				last_coords[1],x, y, outline=self.canvas.lineColor, 
 				width=self.canvas.lineWidth)
 
 			self.x ,self.y = x, y
@@ -446,12 +453,12 @@ class Draw(Application):
 			except:
 				pass
 
-			self.master.xrec, self.master.yrec = self.set_xrec(event.x, event.y)
+			last_coords = self.set_xrec(event.x, event.y)
 
 			x, y = self.make_shifted(event.x, event.y)   
 		
-			self.master.ovalFilled = self.canvas.create_oval(self.master.xrec, \
-				self.master.yrec,x, y, outline=self.canvas.lineColor, 
+			self.master.ovalFilled = self.canvas.create_oval(last_coords[0], \
+				last_coords[1],x, y, outline=self.canvas.lineColor, 
 				width=self.canvas.lineWidth, fill=self.canvas.lineColor)
 
 			self.x ,self.y = x, y
@@ -464,44 +471,46 @@ class Draw(Application):
 			except:
 				pass
 
-			self.master.xrec, self.master.yrec = self.set_xrec(event.x, event.y)
+			last_coords = self.set_xrec(event.x, event.y)
 			x, y = self.make_shifted(event.x, event.y)   
 		
-			self.master.textbox = self.canvas.create_rectangle(self.master.xrec, \
-				self.master.yrec,x, y, outline=self.canvas.lineColor, 
+			self.master.textbox = self.canvas.create_rectangle(last_coords[0], \
+				last_coords[1],x, y, outline=self.canvas.lineColor, 
 				width=2, dash=(10, 10))
 
 			self.master.input_text = True
 			global textBoxFrame, text_font, input_text, coords
 			coords = x, y
 			self.x ,self.y = x, y
-			text_font = self.master.yrec - y
+			text_font = last_coords[1] - y
 			textBoxFrame = self.master.textbox
+			
+			self.master.ex_coords = last_coords
 
 	def input_text(self, font):
 
-		
+		ex_coords = self.master.ex_coords
 		global text_object, input_text, \
-			textBoxFrame, total_text, coords,\
-			last_coords
+			textBoxFrame, total_text, coords
+			
 
 		self.canvas.delete(text_object)
-
-		if coords[1] > last_coords[1]:
+		
+		if coords[1] > ex_coords[1]:
 			y = coords[1]
 		else:
-			y = last_coords[1]
+			y = ex_coords[1]
 
 
-		if coords[0] < last_coords[0]:
+		if coords[0] < ex_coords[0]:
 			x = coords[0]
 		else:
-			x = last_coords[0]
+			x = ex_coords[0]
 
-		if coords[0] > last_coords[0]:
-			width = coords[0] - last_coords[0]
+		if coords[0] > ex_coords[0]:
+			width = coords[0] - ex_coords[0]
 		else:
-			width = last_coords[0] - last_coords[0]
+			width = ex_coords[0] - ex_coords[0]
 
 		if font <0:
 			font = font*-1
@@ -512,27 +521,27 @@ class Draw(Application):
 
 	def make_shifted(self, x, y):
 		if self.master.shift:
-			if x > self.master.xrec and y < self.master.yrec:
-				y = (x - self.master.xrec) - self.master.yrec
+			global last_coords
+			if x > last_coords[0] and y < last_coords[1]:
+				y = (x - last_coords[0]) - last_coords[1]
 				y = -1 * y
-			
-			elif x < self.master.xrec and y < self.master.yrec:
-				y = (x - self.master.xrec) + self.master.yrec
-			elif x < self.master.xrec and y > self.master.yrec:
-				x = (y - self.master.yrec) - self.master.xrec
+			elif x < last_coords[0] and y < last_coords[1]:
+				y = (x - last_coords[0]) + last_coords[1]
+			elif x < last_coords[0] and y > last_coords[1]:
+				x = (y - last_coords[1]) - last_coords[0]
 				x = x *-1
-			elif x > self.master.xrec and y > self.master.yrec:
-				x = (y - self.master.yrec) + self.master.xrec
+			elif x > last_coords[0] and y > last_coords[1]:
+				x = (y - last_coords[1]) + last_coords[0]
 		return x, y
 
 	def set_xrec(self,x, y):
-		if self.master.xrec == None:
+		global last_coords
+		
+		if last_coords[0] == None:
 			xrec = x
 			yrec = y
-			global last_coords
-			last_coords = x,y
-			return xrec, yrec
-		return self.master.xrec, self.master.yrec
+			return x, y
+		return last_coords
 
 
 class Sidebar(Application):
@@ -541,8 +550,7 @@ class Sidebar(Application):
 		self.master = master
 		self.canvas = canvas
 		self.sidebar = None
-		# self.buttonHeight =  master.winfo_screenwidth()
-		# self.buttonWidth =  master.winfo_screenheight()
+
 		global sidebarHeight, sidebarWidth
 		self.buttonHeight =  sidebarHeight
 		self.buttonWidth =  sidebarWidth
@@ -578,7 +586,6 @@ class Sidebar(Application):
 		self.canvas.lineWidthLabel.set(self.canvas.lineWidth)
 		self.brush_size_label["textvariable"] = self.canvas.lineWidthLabel
 		
-		# self.brush_size_label.config(height=int((self.buttonHeight*9)/100))
 
 		self.brush_size_label.pack(side="right", anchor="ne")
 
@@ -683,7 +690,6 @@ class Sidebar(Application):
 		self.add_button_to_list(self.text_frame, "text_frame")
 
 	def color_changer(self):
-
 		self.canvas.lineColor = colorchooser.askcolor(title ="Choose color",
 								color=self.canvas.lineColor)[-1:][0]
 		self.master.button1.configure(bg = self.canvas.lineColor)
@@ -709,8 +715,12 @@ class Sidebar(Application):
 		global buttons_list, textBoxFrame
 		buttons_list[Id].configure(bg="white")
 		buttons_list[Id].configure(fg="black")
+		try:
+			self.canvas.delete(self.master.textbox)
+		except:
+			pass
 
-		self.canvas.delete(textBoxFrame)
+
 
 	def set_pencil(self):
 		global draw_Item, draw_Item_list
@@ -772,10 +782,23 @@ class Sidebar(Application):
 			self.set_config_buttons()
 
 	def set_text(self):
-		global draw_Item, draw_Item_list, input_text
+		global input_text, draw_Item, draw_Item_list
 		input_text = True
+
 		if draw_Item == draw_Item_list[6]:
+			global text_object, total_text
+			self.canvas.delete(textBoxFrame)
+			text_font = 0
+			total_text = ""
+			self.canvas.delete(textBoxFrame)
+			
+			tmp = []
+			tmp.append(text_object)
+			self.canvas.undoList.append(tmp)
+			
+			text_object = None
 			draw_Item = None
+
 			self.set_unclicked(draw_Item_list[6])
 			
 		else:
